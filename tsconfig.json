@@ -10,15 +10,14 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@core/*": ["src/core/*"],
-      "@events/*": ["src/events/*"],
-      "@config/*": ["src/config/*"],
-      "@logging/*": ["src/logging/*"],
-      "@types/*": ["src/types/*"],
-      "@utils/*": ["src/utils/*"]
+      "@/*": ["./src/*"],
+      "@core/*": ["./src/core/*"],
+      "@events/*": ["./src/events/*"],
+      "@config/*": ["./src/config/*"],
+      "@logging/*": ["./src/logging/*"],
+      "@types/*": ["./src/types/*"],
+      "@utils/*": ["./src/utils/*"]
     }
   },
   "include": ["src/**/*"],
