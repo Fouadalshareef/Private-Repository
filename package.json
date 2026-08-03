@@ -1,6 +1,7 @@
 {
   "name": "cupaw-core",
-  "version": "1.0.0",
+  "version": "0.1.0",
+  "private": true,
   "description": "Cupaw AI Platform Core Foundation",
   "type": "module",
   "engines": {

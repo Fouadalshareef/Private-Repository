@@ -1,18 +1,27 @@
-# Task Report: Configuration System Foundation
+# Task Report: Dependency Injection Container Foundation
 
-- **Task ID**: TASK-0004
-- **Task title**: Implement Configuration System Foundation
-- **Summary**: Implemented an in-memory, strongly typed configuration management system using Generic Types. The architecture supports multiple configuration instances concurrently without relying on singletons. It also supports default configuration values and a `getOrDefault` utility. No external environment bindings, file loading, or persistence mechanisms were used, maintaining a pure foundational layer.
+- **Task ID**: TASK-0005
+- **Task title**: Implement Dependency Injection Container Foundation
+- **Summary**: Implemented a lightweight, type-safe, and extensible Dependency Injection (DI) Container that serves as the central service registry of Cupaw. The container supports transient and singleton lifetimes, pre-created instance registration, and manual service resolution. It uses strongly typed generic interfaces with no use of `any`, no external libraries, no decorators, no reflection, no global singleton, and no automatic constructor injection. Meaningful errors are thrown when resolving unknown services or when attempting to override an existing registration with `override: false`.
 - **Files created**:
-  - `src/config/IConfiguration.ts`
-  - `src/config/Configuration.ts`
-  - `src/config/DefaultConfiguration.ts`
-  - `src/config/index.ts`
-  - `tests/Configuration.test.ts`
+  - `src/core/container/ServiceIdentifier.ts`
+  - `src/core/container/ServiceDescriptor.ts`
+  - `src/core/container/RegistrationOptions.ts`
+  - `src/core/container/ContainerError.ts`
+  - `src/core/container/IContainer.ts`
+  - `src/core/container/Container.ts`
+  - `src/core/container/index.ts`
+  - `tests/Container.test.ts`
 - **Files modified**:
+  - `package.json` (version `1.0.0` → `0.1.0`, added `"private": true`)
   - `TASK_REPORT.md`
 - **Build status**: PASS
 - **Lint status**: PASS
 - **Test status**: PASS
 - **Known issues**: None
-- **Notes**: Developed strictly with internal memory storage. TypeScript generics enforce deep type safety across `get`, `set`, and `has` operations mapped exactly to the configuration schema object type.
+- **Notes**: The container is designed to be modular and ready for future expansion. All public methods are defined by the `IContainer` interface and fully implemented by the `Container` class. Service identifiers can be strings or symbols, enabling collision-free registrations. The `RegistrationOptions` interface provides an `override` flag (defaults to `true`) to control replacement behavior. Comprehensive unit tests cover all container features including transient/singleton lifetimes, instance registration, `has()`, `remove()`, `clear()`, unknown service errors, override behavior, and symbol identifiers.
+- **Future recommendations**:
+  - Add scoped lifetime support (e.g., request-scoped services).
+  - Add child container support for hierarchical service resolution.
+  - Add optional lazy resolution (e.g., `resolveLazy()` returning a provider).
+  - Add disposal support for services implementing a `Disposable` interface.
