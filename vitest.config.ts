@@ -20,6 +20,7 @@ export default defineConfig({
       '@plugins': path.resolve(__dirname, './src/plugins'),
       '@workspace': path.resolve(__dirname, './src/workspace'),
       '@filesystem': path.resolve(__dirname, './src/filesystem'),
+      '@project': path.resolve(__dirname, './src/project'),
       '@types': path.resolve(__dirname, './src/types'),
       '@utils': path.resolve(__dirname, './src/utils'),
     },

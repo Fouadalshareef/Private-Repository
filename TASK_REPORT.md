@@ -1,4 +1,41 @@
-# Task Report: File System Abstraction Foundation
+# Task Report: Project Scanner Foundation
+
+- **Task ID**: TASK-0010
+- **Task title**: Implement Project Scanner Foundation
+- **Summary**: Implemented the Project Scanner for Cupaw. The scanner discovers and describes the structure of a software project without analyzing source code. It operates only through the `IFileSystem` abstraction — never accessing the operating system directly. The `ProjectScanner` supports `scan()`, `getProjectInfo()`, `getFiles()`, `getDirectories()`, and `getStatistics()`. `ProjectInfo` contains `projectId`, `projectName`, `rootPath`, `createdAt`, and `scannedAt`. `ProjectFile` contains `path`, `name`, `extension`, `size`, `createdAt`, and `modifiedAt`. `ProjectDirectory` contains `path`, `name`, and `depth`. `ProjectStatistics` contains `totalFiles`, `totalDirectories`, `totalSize`, and `extensions`. `ProjectScanResult` combines the info, files, directories, and statistics. `ProjectScannerOptions` supports `includeHidden`, `recursive`, `maxDepth`, `ignoredExtensions`, and `ignoredDirectories`. `ProjectScannerEvents` defines event names (`project.scan.started`, `project.scan.completed`, `project.scan.failed`) — no events are published yet. `ProjectScannerError` and its subclasses (`WorkspaceNotOpenError`, `ProjectRootNotFoundError`) provide meaningful error types.
+- **Files created**:
+  - `src/project/IProjectScanner.ts`
+  - `src/project/ProjectScanner.ts`
+  - `src/project/ProjectInfo.ts`
+  - `src/project/ProjectFile.ts`
+  - `src/project/ProjectDirectory.ts`
+  - `src/project/ProjectStatistics.ts`
+  - `src/project/ProjectScanResult.ts`
+  - `src/project/ProjectScannerOptions.ts`
+  - `src/project/ProjectScannerError.ts`
+  - `src/project/ProjectScannerEvents.ts`
+  - `src/project/index.ts`
+  - `tests/ProjectScanner.test.ts`
+- **Files modified**:
+  - `src/index.ts` (exported project module)
+  - `tsconfig.json` (added `@project/*` path alias)
+  - `vitest.config.ts` (added `@project` test alias)
+  - `TASK_REPORT.md`
+- **Build status**: PASS
+- **Lint status**: PASS
+- **Test status**: PASS (262 tests across 12 test files, including 31 new project scanner tests)
+- **Known issues**: None
+- **Notes**: The scanner only discovers project structure — no code parsing, AST, or language analysis. It uses the `IFileSystem` abstraction exclusively (via `VirtualFileSystem` in tests); no Node.js `fs` or `path` is used. The scanner requires an open workspace whose root exists in the file system. Directory depths are relative to the project root (root is depth 0). Hidden files/directories are excluded by default. The `maxDepth` option limits scanning depth (root is depth 0). Accessors return defensive copies to keep internal state immutable. The `ProjectScannerEvents` constants are definitions only — integration with the Event Bus is deferred. Unit tests cover empty workspace, single file, multiple directories, statistics, hidden files, max depth, ignored directories, ignored extensions, non-recursive scans, scan results, accessors, defensive copies, errors, and interface conformance.
+- **Future recommendations**:
+  - Publish project scanner lifecycle events to the Event Bus.
+  - Add project file content reading (via the `IFileSystem` abstraction) for future analysis.
+  - Add a `getFile(path)` lookup helper.
+  - Add incremental re-scanning to avoid full rescans.
+  - Integrate the project scanner into the bootstrap and DI container as a core service.
+
+---
+
+# Previous Task Report: File System Abstraction Foundation
 
 - **Task ID**: TASK-0009
 - **Task title**: Implement File System Abstraction Foundation (FSAL)

@@ -20,6 +20,7 @@
       "@plugins/*": ["./src/plugins/*"],
       "@workspace/*": ["./src/workspace/*"],
       "@filesystem/*": ["./src/filesystem/*"],
+      "@project/*": ["./src/project/*"],
       "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
     }
