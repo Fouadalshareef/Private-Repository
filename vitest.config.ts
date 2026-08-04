@@ -24,6 +24,7 @@ export default defineConfig({
       '@model': path.resolve(__dirname, './src/model'),
       '@source': path.resolve(__dirname, './src/source'),
       '@language': path.resolve(__dirname, './src/language'),
+      '@ai': path.resolve(__dirname, './src/ai'),
       '@types': path.resolve(__dirname, './src/types'),
       '@utils': path.resolve(__dirname, './src/utils'),
     },

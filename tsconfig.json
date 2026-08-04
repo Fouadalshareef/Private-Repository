@@ -24,6 +24,7 @@
       "@model/*": ["./src/model/*"],
       "@source/*": ["./src/source/*"],
       "@language/*": ["./src/language/*"],
+      "@ai/*": ["./src/ai/*"],
       "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
     }
