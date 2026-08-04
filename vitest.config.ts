@@ -21,6 +21,7 @@ export default defineConfig({
       '@workspace': path.resolve(__dirname, './src/workspace'),
       '@filesystem': path.resolve(__dirname, './src/filesystem'),
       '@project': path.resolve(__dirname, './src/project'),
+      '@model': path.resolve(__dirname, './src/model'),
       '@types': path.resolve(__dirname, './src/types'),
       '@utils': path.resolve(__dirname, './src/utils'),
     },

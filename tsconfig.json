@@ -21,6 +21,7 @@
       "@workspace/*": ["./src/workspace/*"],
       "@filesystem/*": ["./src/filesystem/*"],
       "@project/*": ["./src/project/*"],
+      "@model/*": ["./src/model/*"],
       "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
     }

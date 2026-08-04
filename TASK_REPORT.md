@@ -1,4 +1,42 @@
-# Task Report: Project Scanner Foundation
+# Task Report: Project Object Model Foundation
+
+- **Task ID**: TASK-0011
+- **Task title**: Implement Project Object Model Foundation
+- **Summary**: Implemented the Project Object Model (POM) for Cupaw. The POM represents an in-memory object graph of a software project and becomes the central representation used by future systems such as Source Index, Language Services, AI Engine, Refactoring, Search, Navigation, and Memory. The `ProjectNode` base class provides `id`, `name`, `path`, `parent`, `children`, and `createdAt`. `ProjectNodeType` supports `project`, `directory`, and `file`. The `ProjectTree` supports `root()`, `find()`, `findByPath()`, `findById()`, `contains()`, `walk()`, and `visit()`. The `ProjectModelBuilder` builds the `ProjectTree` from a `ProjectScanResult` — it does NOT access the filesystem directly. `ProjectModelVisitor` is a strongly typed visitor interface supporting tree traversal with no business logic. `ProjectModelEvents` defines event names (`project.model.created`, `project.model.updated`, `project.model.removed`) — no events are published yet. `ProjectModelError` and its subclasses (`ProjectNodeNotFoundError`, `ProjectNodeAlreadyExistsError`) provide meaningful error types.
+- **Files created**:
+  - `src/model/ProjectModel.ts`
+  - `src/model/ProjectNode.ts`
+  - `src/model/ProjectRootNode.ts`
+  - `src/model/ProjectTree.ts`
+  - `src/model/ProjectFileNode.ts`
+  - `src/model/ProjectDirectoryNode.ts`
+  - `src/model/ProjectNodeType.ts`
+  - `src/model/ProjectModelBuilder.ts`
+  - `src/model/ProjectModelVisitor.ts`
+  - `src/model/ProjectModelError.ts`
+  - `src/model/ProjectModelEvents.ts`
+  - `src/model/index.ts`
+  - `tests/ProjectModel.test.ts`
+- **Files modified**:
+  - `src/index.ts` (exported model module)
+  - `tsconfig.json` (added `@model/*` path alias)
+  - `vitest.config.ts` (added `@model` test alias)
+  - `TASK_REPORT.md`
+- **Build status**: PASS
+- **Lint status**: PASS
+- **Test status**: PASS (286 tests across 13 test files, including 24 new model tests)
+- **Known issues**: None
+- **Notes**: The POM is a pure in-memory object graph — no source code parsing, no AST, no language analysis. The `ProjectModelBuilder` uses only a `ProjectScanResult`, never accessing the filesystem directly. Nodes form a tree via parent/children links, with stable IDs derived from the project ID and path (e.g., `proj-1:file:src/index.ts`). The `ProjectTree` provides depth-first pre-order traversal via `walk()` and typed visitor dispatch via `visit()`. The `ProjectModelVisitor` allows optional per-type visit methods (`visitProject`, `visitDirectory`, `visitFile`) plus a universal `visitNode`. The `ProjectModelEvents` constants are definitions only — integration with the Event Bus is deferred. Unit tests cover tree creation, node hierarchy, `find()`, `findByPath()`, `findById()`, `walk()`, visitor, builder, immutability, and event name definitions.
+- **Future recommendations**:
+  - Publish project model lifecycle events to the Event Bus.
+  - Add a model registry to track multiple project models.
+  - Add node mutation operations (add/remove/rename) for future editing support.
+  - Add incremental model updates from file system events.
+  - Integrate the project model into the bootstrap and DI container as a core service.
+
+---
+
+# Previous Task Report: Project Scanner Foundation
 
 - **Task ID**: TASK-0010
 - **Task title**: Implement Project Scanner Foundation
