@@ -1,4 +1,41 @@
-# Task Report: Workspace Foundation
+# Task Report: File System Abstraction Foundation
+
+- **Task ID**: TASK-0009
+- **Task title**: Implement File System Abstraction Foundation (FSAL)
+- **Summary**: Implemented the File System Abstraction Layer (FSAL) for Cupaw. The purpose of this layer is to isolate all future file operations behind a unified interface — no direct use of Node.js `fs` APIs will be allowed elsewhere in the project. The `IFileSystem` interface defines `exists()`, `readFile()`, `writeFile()`, `delete()`, `move()`, `copy()`, `createDirectory()`, `deleteDirectory()`, `list()`, and `stat()`. The `VirtualFileSystem` is a fully in-memory implementation simulating a file system using in-memory collections — no Node.js `fs` module, no reading from or writing to disk, no watchers, no async operations. `FileInfo` and `DirectoryInfo` provide metadata including `name`, `path`, `size`, `createdAt`, `modifiedAt`, and `isDirectory`. `FileSystemEvents` defines event name constants (`filesystem.file.created`, `filesystem.file.updated`, `filesystem.file.deleted`, `filesystem.directory.created`, `filesystem.directory.deleted`) — events are not published yet. `PathUtils` provides manually implemented `normalize()`, `join()`, `dirname()`, `basename()`, and `extname()` with no dependency on the Node.js `path` module. `FileSystemError` and its subclasses (`FileNotFoundError`, `FileAlreadyExistsError`, `FileSystemOperationError`) provide meaningful error types.
+- **Files created**:
+  - `src/filesystem/IFileSystem.ts`
+  - `src/filesystem/VirtualFileSystem.ts`
+  - `src/filesystem/FileInfo.ts`
+  - `src/filesystem/DirectoryInfo.ts`
+  - `src/filesystem/FileSystemError.ts`
+  - `src/filesystem/FileSystemEvents.ts`
+  - `src/filesystem/FileSystemOptions.ts`
+  - `src/filesystem/PathUtils.ts`
+  - `src/filesystem/index.ts`
+  - `tests/VirtualFileSystem.test.ts`
+  - `tests/PathUtils.test.ts`
+- **Files modified**:
+  - `src/index.ts` (exported filesystem module)
+  - `tsconfig.json` (added `@filesystem/*` path alias)
+  - `vitest.config.ts` (added `@filesystem` test alias)
+  - `TASK_REPORT.md`
+- **Build status**: PASS
+- **Lint status**: PASS
+- **Test status**: PASS (231 tests across 11 test files, including 79 new filesystem tests)
+- **Known issues**: None
+- **Notes**: The FSAL is a pure abstraction — no real filesystem is implemented. The `VirtualFileSystem` uses in-memory `Map` collections for files and directories with a root directory that always exists. Paths are normalized via `PathUtils` (backslashes converted to forward slashes). Directory operations (`move`, `copy`, `deleteDirectory`) recursively handle descendants. The `FileSystemOptions.readOnly` flag prevents all write operations. The `FileSystemEvents` constants are definitions only — integration with the Event Bus is deferred. Unit tests cover file creation, file deletion, directory creation, directory deletion, move, copy, exists, listing, metadata, read-only behavior, interface conformance, path utilities, and event name definitions.
+- **Future recommendations**:
+  - Implement a real `NodeFileSystem` (or `DiskFileSystem`) implementing `IFileSystem` using Node.js `fs` under the hood — the only place Node `fs` would be allowed.
+  - Publish file system lifecycle events to the Event Bus.
+  - Add async variants of the operations when non-blocking I/O is needed.
+  - Add recursive directory creation (`createDirectory` with `recursive` option).
+  - Add symlink support and permission metadata.
+  - Integrate the file system into the bootstrap and DI container as a core service.
+
+---
+
+# Previous Task Report: Workspace Foundation
 
 - **Task ID**: TASK-0008
 - **Task title**: Implement Workspace Foundation

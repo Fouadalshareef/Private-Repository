@@ -19,6 +19,7 @@
       "@bootstrap/*": ["./src/bootstrap/*"],
       "@plugins/*": ["./src/plugins/*"],
       "@workspace/*": ["./src/workspace/*"],
+      "@filesystem/*": ["./src/filesystem/*"],
       "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
     }
