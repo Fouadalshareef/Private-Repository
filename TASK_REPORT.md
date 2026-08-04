@@ -1,4 +1,39 @@
-# Task Report: Application Bootstrap Foundation
+# Task Report: Plugin System Foundation
+
+- **Task ID**: TASK-0007
+- **Task title**: Implement Plugin System Foundation
+- **Summary**: Implemented the foundational Plugin System for Cupaw. The system provides the infrastructure for future modules (AI Providers, Workspace, Memory, Tools, Git, Browser, etc.) to be added as independent plugins. It includes a `PluginManager` that orchestrates plugin lifecycle (register, unregister, initialize, dispose, get, getAll, has), a `PluginRegistry` that maintains all registered plugins and prevents duplicate IDs, a `PluginLifecycle` enum tracking `registered`, `initialized`, `running`, `stopped`, and `disposed` states, a strongly typed `PluginContext` exposing the container, logger, configuration, and event bus, and a `PluginError` for meaningful error reporting. The design is strongly typed, in-memory only, with no dynamic loading, no filesystem scanning, no npm package loading, no reflection, no decorators, no singleton, and no global state. No real plugins are implemented — only the infrastructure.
+- **Files created**:
+  - `src/plugins/IPlugin.ts`
+  - `src/plugins/PluginMetadata.ts`
+  - `src/plugins/PluginContext.ts`
+  - `src/plugins/PluginManager.ts`
+  - `src/plugins/PluginRegistry.ts`
+  - `src/plugins/PluginError.ts`
+  - `src/plugins/PluginLifecycle.ts`
+  - `src/plugins/index.ts`
+  - `tests/PluginManager.test.ts`
+  - `tests/PluginRegistry.test.ts`
+- **Files modified**:
+  - `src/index.ts` (exported plugins module)
+  - `tsconfig.json` (added `@plugins/*` path alias)
+  - `vitest.config.ts` (added `@plugins` test alias)
+  - `TASK_REPORT.md`
+- **Build status**: PASS
+- **Lint status**: PASS
+- **Test status**: PASS (114 tests across 8 test files, including 49 new plugin tests)
+- **Known issues**: None
+- **Notes**: The plugin system is fully in-memory and synchronous. The `PluginManager` delegates storage to a `PluginRegistry` and orchestrates lifecycle transitions. A plugin must be in the `registered` state to be initialized, and must be disposed before it can be unregistered. The `PluginRegistry` prevents duplicate plugin IDs and throws meaningful `PluginError` objects. The `PluginContext` is strongly typed and provides plugins access to the container, logger, configuration, and event bus. The `PluginLifecycle` enum includes `initialized` and `stopped` states reserved for future expansion (e.g., a `stop()` lifecycle method). Unit tests cover plugin registration, duplicate IDs, plugin lookup, plugin initialization, plugin disposal, registry behavior, lifecycle changes, and isolation between manager/registry instances.
+- **Future recommendations**:
+  - Add a `stop()` lifecycle method to transition plugins to the `stopped` state.
+  - Add plugin dependency resolution (e.g., plugins declaring dependencies on other plugins).
+  - Add plugin version conflict detection.
+  - Add a `disposeAll()` / `initializeAll()` convenience method on the manager.
+  - Integrate the plugin manager into the bootstrap as a core service.
+
+---
+
+# Previous Task Report: Application Bootstrap Foundation
 
 - **Task ID**: TASK-0006
 - **Task title**: Implement Application Bootstrap Foundation

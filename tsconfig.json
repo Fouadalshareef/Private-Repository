@@ -17,6 +17,7 @@
       "@config/*": ["./src/config/*"],
       "@logging/*": ["./src/logging/*"],
       "@bootstrap/*": ["./src/bootstrap/*"],
+      "@plugins/*": ["./src/plugins/*"],
       "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
     }
