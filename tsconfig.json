@@ -23,6 +23,7 @@
       "@project/*": ["./src/project/*"],
       "@model/*": ["./src/model/*"],
       "@source/*": ["./src/source/*"],
+      "@language/*": ["./src/language/*"],
       "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
     }

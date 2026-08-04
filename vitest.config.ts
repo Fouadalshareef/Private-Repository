@@ -23,6 +23,7 @@ export default defineConfig({
       '@project': path.resolve(__dirname, './src/project'),
       '@model': path.resolve(__dirname, './src/model'),
       '@source': path.resolve(__dirname, './src/source'),
+      '@language': path.resolve(__dirname, './src/language'),
       '@types': path.resolve(__dirname, './src/types'),
       '@utils': path.resolve(__dirname, './src/utils'),
     },
