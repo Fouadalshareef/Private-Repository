@@ -1,4 +1,42 @@
-# Task Report: Project Object Model Foundation
+# Task Report: Source Index Foundation
+
+- **Task ID**: TASK-0012
+- **Task title**: Implement Source Index Foundation
+- **Summary**: Implemented the Source Index Foundation for Cupaw. The Source Index builds an in-memory lookup index over the `ProjectModel` (the Project Object Model from TASK-0011). It does NOT parse source code — it indexes files and their structural metadata only. The `SourceIndex` class supports `build()`, `getFile()`, `getAllFiles()`, `findFilesByExtension()`, `contains()`, `size()`, and `clear()`. `SourceIndexEntry` contains `path`, `name`, `extension`, `size`, and `parsed` (always `false` until parsing is implemented). `SourceSymbol` is a placeholder interface reserved for future parsing. `SourceIndexResult` contains `indexedFiles`, `builtAt`, and `entries`. `SourceIndexOptions` supports `includeExtensionless` and `trackSymbols` (reserved for future use). `SourceIndexEvents` defines event names (`source.index.built`, `source.index.updated`, `source.index.cleared`) — no events are published yet. `SourceIndexError` and its subclasses (`SourceIndexNotBuiltError`, `SourceFileNotFoundError`) provide meaningful error types. The design is strongly typed, in-memory only, with no filesystem access, no source code parsing, no AST, no singleton, and no global state.
+- **Files created**:
+  - `src/source/ISourceIndex.ts`
+  - `src/source/SourceIndex.ts`
+  - `src/source/SourceIndexEntry.ts`
+  - `src/source/SourceSymbol.ts`
+  - `src/source/SourceIndexResult.ts`
+  - `src/source/SourceIndexOptions.ts`
+  - `src/source/SourceIndexError.ts`
+  - `src/source/SourceIndexEvents.ts`
+  - `src/source/index.ts`
+  - `tests/SourceIndex.test.ts`
+- **Files modified**:
+  - `src/index.ts` (exported source module)
+  - `tsconfig.json` (added `@source/*` path alias)
+  - `vitest.config.ts` (added `@source` test alias)
+  - `TASK_REPORT.md`
+- **Build status**: PASS
+- **Lint status**: PASS
+- **Test status**: PASS (308 tests across 14 test files, including 22 new source index tests)
+- **Known issues**: None
+- **Notes**: The Source Index is a pure in-memory index — no source code parsing, no AST, no language analysis. It builds from the `ProjectModel` by walking the tree and collecting all file nodes. The `SourceIndexEntry.parsed` field is always `false` until parsing is implemented in a future task. The `SourceSymbol` interface is a placeholder reserved for future parsing. Accessors return defensive copies to keep internal state immutable. The `SourceIndexEvents` constants are definitions only — integration with the Event Bus is deferred. Unit tests cover index building, file lookup, extension lookup, contains, size, clear, rebuild, immutability, errors, interface conformance, and event name definitions.
+- **Future recommendations**:
+  - **Critical**: Implement source code parsing to populate `SourceSymbol` entries with actual code elements (classes, functions, variables, imports, exports).
+  - **Critical**: Add incremental index updates when files change (via file system events or project model updates).
+  - **Recommended**: Publish source index lifecycle events to the Event Bus.
+  - **Recommended**: Add symbol search and lookup capabilities (find by name, find by type).
+  - **Recommended**: Add cross-reference tracking (which files reference which symbols).
+  - **Future Ideas**: Add full-text search over file contents.
+  - **Future Ideas**: Add dependency graph extraction (import/export relationships).
+  - **Future Ideas**: Integrate the source index into the bootstrap and DI container as a core service.
+
+---
+
+# Previous Task Report: Project Object Model Foundation
 
 - **Task ID**: TASK-0011
 - **Task title**: Implement Project Object Model Foundation

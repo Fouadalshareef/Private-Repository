@@ -9,3 +9,4 @@ export * from './workspace/index.js';
 export * from './filesystem/index.js';
 export * from './project/index.js';
 export * from './model/index.js';
+export * from './source/index.js';

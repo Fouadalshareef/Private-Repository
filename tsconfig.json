@@ -22,6 +22,7 @@
       "@filesystem/*": ["./src/filesystem/*"],
       "@project/*": ["./src/project/*"],
       "@model/*": ["./src/model/*"],
+      "@source/*": ["./src/source/*"],
       "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
     }
