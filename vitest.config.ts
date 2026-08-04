@@ -16,6 +16,7 @@ export default defineConfig({
       '@events': path.resolve(__dirname, './src/events'),
       '@config': path.resolve(__dirname, './src/config'),
       '@logging': path.resolve(__dirname, './src/logging'),
+      '@bootstrap': path.resolve(__dirname, './src/bootstrap'),
       '@types': path.resolve(__dirname, './src/types'),
       '@utils': path.resolve(__dirname, './src/utils'),
     },

@@ -16,6 +16,7 @@
       "@events/*": ["./src/events/*"],
       "@config/*": ["./src/config/*"],
       "@logging/*": ["./src/logging/*"],
+      "@bootstrap/*": ["./src/bootstrap/*"],
       "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
     }
