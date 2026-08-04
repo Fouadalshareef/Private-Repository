@@ -25,6 +25,7 @@
       "@source/*": ["./src/source/*"],
       "@language/*": ["./src/language/*"],
       "@ai/*": ["./src/ai/*"],
+      "@prompt/*": ["./src/prompt/*"],
       "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
     }

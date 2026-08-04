@@ -1,27 +1,25 @@
 # Cupaw AI Platform - Task Report
 
-## TASK-0014: Implement AI Provider Integration Foundation
+## TASK-0015: Implement Prompt Engineering & Template Management Engine
 
 ### Summary
-Implemented the AI Provider Integration Foundation for the Cupaw AI Platform. This module establishes a provider-agnostic abstraction for interacting with Large Language Models (LLMs), defining standard interfaces for text completion, streaming, prompt formatting, token usage tracking, and model configurations.
+Implemented the Prompt Engineering & Template Management Engine for the Cupaw AI Platform. This module provides variable substitution, template rendering, role-based prompt composition (System, User, Assistant), and token-budget aware context window formatting.
 
 ### Files Created
-- `src/ai/AIProviderType.ts` - Enum defining supported providers (OpenAI, Anthropic, Ollama, Mock)
-- `src/ai/AIMessage.ts` - Interface for standard prompt/chat messages with helper functions
-- `src/ai/AIResponse.ts` - Interface for structured responses with token usage and finish reasons
-- `src/ai/AIProviderError.ts` - Custom error types (AIProviderError, ProviderNotFoundError, APIKeyMissingError, ProviderResponseError, ProviderStreamError)
-- `src/ai/AIProviderEvents.ts` - Event name constants for AI call lifecycles
-- `src/ai/IAIProvider.ts` - Core interface defining LLM interactions (complete, stream, getCapabilities, getProviderInfo)
-- `src/ai/AIProviderRegistry.ts` - Registry to manage and lookup active AI providers
-- `src/ai/MockAIProvider.ts` - In-memory mock implementation for robust testing without network calls
-- `src/ai/index.ts` - Module entry point exporting all public interfaces and classes
-- `tests/AIProvider.test.ts` - Comprehensive unit tests (33 tests)
+- `src/prompt/PromptError.ts` - Custom error types (PromptError, MissingPromptVariableError, TemplateSyntaxError, PromptExceedsTokenLimitError)
+- `src/prompt/PromptEvents.ts` - Event name constants for prompt lifecycle events
+- `src/prompt/IPromptTemplate.ts` - Interfaces for prompt templates and rendering options
+- `src/prompt/IPromptEngine.ts` - Core interface for prompt engine operations
+- `src/prompt/PromptTemplate.ts` - Implementation of template rendering with variable substitution
+- `src/prompt/PromptEngine.ts` - Core engine implementing template execution and composition into AIMessage objects
+- `src/prompt/index.ts` - Module entry point exporting all public interfaces and classes
+- `tests/PromptEngine.test.ts` - Comprehensive unit tests (17 tests)
 
 ### Files Modified
-- `src/index.ts` - Added AI module export
-- `tsconfig.json` - Added `@ai/*` path alias
-- `vitest.config.ts` - Added `@ai` test alias
-- `TASK_REPORT.md` - Updated with TASK-0014 completion report
+- `src/index.ts` - Added prompt module export
+- `tsconfig.json` - Added `@prompt/*` path alias
+- `vitest.config.ts` - Added `@prompt` test alias
+- `TASK_REPORT.md` - Updated with TASK-0015 completion report
 
 ### Build Status
 ✅ **PASSED** - TypeScript compilation successful
@@ -30,32 +28,34 @@ Implemented the AI Provider Integration Foundation for the Cupaw AI Platform. Th
 ✅ **PASSED** - ESLint checks passed
 
 ### Test Status
-✅ **PASSED** - 374/374 tests passed (16 test files)
-- AIProvider.test.ts: 33/33 tests passed
+✅ **PASSED** - 391/391 tests passed (17 test files)
+- PromptEngine.test.ts: 17/17 tests passed
 - All existing tests continue to pass
 
 ### Known Issues
 None
 
 ### Notes
-- The AI module uses provider-agnostic abstractions with no live HTTP/SDK network requests
-- MockAIProvider provides predictable, configurable responses for testing
+- Implements lightweight Mustache-style `{{variable}}` substitution using regex
+- No heavy external templating libraries used
 - All interfaces use readonly properties and defensive copies for immutability
 - No singletons, no `any` types, no decorators
-- Designed for future expansion with strongly typed interfaces
-- Event constants defined but not yet published to EventBus (as per constraints)
+- Token estimation uses simple character-based heuristic (~4 chars per token)
+- Supports strict and non-strict variable validation modes
+- Context window formatting with automatic truncation
+- Outputs standard `AIMessage[]` compatible with `IAIProvider` from TASK-0014
 
 ### Future Recommendations
-1. Implement real provider adapters (OpenAI, Anthropic, Ollama) with proper SDK integration
-2. Add retry logic and error handling for network failures
-3. Implement token counting with actual tokenizers
-4. Add support for function/tool calling
-5. Implement streaming with backpressure handling
-6. Add rate limiting and request queuing
-7. Support for vision/multimodal inputs
-8. Add conversation history management
-9. Implement prompt templates and formatting
-10. Add caching for repeated requests
+1. Implement more sophisticated token counting with actual tokenizers
+2. Add support for nested templates and template inheritance
+3. Implement conditional logic in templates
+4. Add template validation and syntax checking
+5. Support for custom delimiters beyond `{{}}`
+6. Add template caching for performance
+7. Implement prompt optimization suggestions
+8. Add support for multimodal prompts (text + images)
+9. Implement prompt versioning and rollback
+10. Add prompt analytics and usage tracking
 
 ---
 
@@ -105,3 +105,8 @@ Status: Completed
 Status: Completed
 - Created IAIProvider, AIProviderType, AIMessage, AIResponse, AIProviderRegistry, MockAIProvider, AIProviderError, AIProviderEvents
 - Provider-agnostic LLM abstraction with mock implementation
+
+### TASK-0015: Implement Prompt Engineering & Template Management Engine
+Status: Completed
+- Created IPromptTemplate, IPromptEngine, PromptTemplate, PromptEngine, PromptError, PromptEvents
+- Template rendering with variable substitution and token-budget aware composition

@@ -12,3 +12,4 @@ export * from './model/index.js';
 export * from './source/index.js';
 export * from './language/index.js';
 export * from './ai/index.js';
+export * from './prompt/index.js';
