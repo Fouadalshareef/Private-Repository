@@ -18,6 +18,7 @@ export default defineConfig({
       '@logging': path.resolve(__dirname, './src/logging'),
       '@bootstrap': path.resolve(__dirname, './src/bootstrap'),
       '@plugins': path.resolve(__dirname, './src/plugins'),
+      '@workspace': path.resolve(__dirname, './src/workspace'),
       '@types': path.resolve(__dirname, './src/types'),
       '@utils': path.resolve(__dirname, './src/utils'),
     },

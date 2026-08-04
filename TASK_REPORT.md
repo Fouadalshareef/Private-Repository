@@ -1,4 +1,38 @@
-# Task Report: Plugin System Foundation
+# Task Report: Workspace Foundation
+
+- **Task ID**: TASK-0008
+- **Task title**: Implement Workspace Foundation
+- **Summary**: Implemented the Workspace Foundation for Cupaw. The workspace represents the current software project being analyzed or modified. This version is purely in-memory with no filesystem access. The `Workspace` class supports `create()`, `open()`, `close()`, `isOpen()`, `getInfo()`, `getRoot()`, and `getState()`. The `WorkspaceInfo` contains `id`, `name`, `rootPath`, `createdAt`, `openedAt`, and `version`. The `WorkspaceState` enum tracks `closed`, `opening`, `open`, `closing`, and `error` states. `WorkspaceEvents` defines event name constants (`workspace.created`, `workspace.opened`, `workspace.closed`, `workspace.error`) for future Event Bus integration — no events are published yet. `WorkspaceOptions` supports optional `readOnly`, `autoCreate`, and `watchChanges` (reserved for future use) configuration. `WorkspaceError` and its subclasses (`WorkspaceCreationError`, `WorkspaceOpenError`, `WorkspaceCloseError`, `WorkspaceStateError`) provide meaningful error types. The design is strongly typed, in-memory only, with no async operations, no global state, and no singleton.
+- **Files created**:
+  - `src/workspace/IWorkspace.ts`
+  - `src/workspace/Workspace.ts`
+  - `src/workspace/WorkspaceInfo.ts`
+  - `src/workspace/WorkspaceState.ts`
+  - `src/workspace/WorkspaceError.ts`
+  - `src/workspace/WorkspaceEvents.ts`
+  - `src/workspace/WorkspaceOptions.ts`
+  - `src/workspace/index.ts`
+  - `tests/Workspace.test.ts`
+- **Files modified**:
+  - `src/index.ts` (exported workspace module)
+  - `tsconfig.json` (added `@workspace/*` path alias)
+  - `vitest.config.ts` (added `@workspace` test alias)
+  - `TASK_REPORT.md`
+- **Build status**: PASS
+- **Lint status**: PASS
+- **Test status**: PASS (152 tests across 9 test files, including 38 new workspace tests)
+- **Known issues**: None
+- **Notes**: The workspace exists only in memory — no filesystem access, file reading, file writing, or watchers are implemented. The `WorkspaceOptions.autoCreate` flag allows creating the workspace at construction time via `WorkspaceCreationParams`. The `WorkspaceInfo` returned by `getInfo()` and options returned by `getOptions()` are defensive copies, keeping internal state immutable. The `WorkspaceState.OPENING`, `CLOSING`, and `ERROR` states are reserved for future expansion when async filesystem operations and error recovery workflows are added. The `WorkspaceEvents` constants are definitions only — integration with the Event Bus is deferred. The workspace is designed for future integration with the Container, Bootstrap, Plugin System, and Event Bus. Unit tests cover workspace creation, opening, closing, state transitions, workspace info, options (including `autoCreate`), errors, interface conformance, immutability, and event name definitions.
+- **Future recommendations**:
+  - Publish workspace lifecycle events to the Event Bus.
+  - Add a workspace manager to track multiple workspaces.
+  - Add filesystem-backed workspace operations (scan, read, write) when the File System module is implemented.
+  - Add workspace persistence (save/restore workspace state).
+  - Integrate the workspace into the bootstrap and DI container as a core service.
+
+---
+
+# Previous Task Report: Plugin System Foundation
 
 - **Task ID**: TASK-0007
 - **Task title**: Implement Plugin System Foundation

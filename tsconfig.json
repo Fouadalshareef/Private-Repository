@@ -18,6 +18,7 @@
       "@logging/*": ["./src/logging/*"],
       "@bootstrap/*": ["./src/bootstrap/*"],
       "@plugins/*": ["./src/plugins/*"],
+      "@workspace/*": ["./src/workspace/*"],
       "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
     }
