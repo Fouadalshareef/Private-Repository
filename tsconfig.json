@@ -26,6 +26,11 @@
       "@language/*": ["./src/language/*"],
       "@ai/*": ["./src/ai/*"],
       "@prompt/*": ["./src/prompt/*"],
+      "@context/*": ["./src/context/*"],
+      "@agent/*": ["./src/agent/*"],
+      "@security/*": ["./src/security/*"],
+      "@tools/*": ["./src/tools/*"],
+      "@cli/*": ["./src/cli/*"],
       "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
     }

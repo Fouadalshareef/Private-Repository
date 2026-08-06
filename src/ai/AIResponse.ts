@@ -10,6 +10,20 @@ export enum FinishReason {
   CANCELLED = 'cancelled',
   /** The provider encountered an error. */
   ERROR = 'error',
+  /** The provider is requesting one or more tool calls. */
+  TOOL_CALLS = 'tool_calls',
+}
+
+/**
+ * Represents a single tool call request from an AI provider response.
+ */
+export interface ToolCall {
+  /** Unique identifier for this tool call (used to correlate results). */
+  readonly id: string;
+  /** The name of the tool to invoke. */
+  readonly name: string;
+  /** The parsed arguments to pass to the tool handler. */
+  readonly args: Readonly<Record<string, unknown>>;
 }
 
 /**
@@ -47,6 +61,8 @@ export interface AIResponse {
   readonly usage: TokenUsage;
   /** The model that generated the response. */
   readonly model: string;
+  /** Optional tool calls requested by the provider (populated when finishReason is TOOL_CALLS). */
+  readonly toolCalls?: readonly ToolCall[];
   /** Optional provider-specific metadata. */
   readonly metadata?: Readonly<Record<string, unknown>>;
 }
@@ -60,6 +76,7 @@ export function createAIResponse(response: AIResponse): AIResponse {
     finishReason: response.finishReason,
     usage: createTokenUsage(response.usage),
     model: response.model,
+    ...(response.toolCalls !== undefined && { toolCalls: response.toolCalls.map((tc) => ({ ...tc })) }),
     ...(response.metadata !== undefined && { metadata: { ...response.metadata } }),
   };
 }

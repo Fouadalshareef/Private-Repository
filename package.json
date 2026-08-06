@@ -4,6 +4,9 @@
   "private": true,
   "description": "Cupaw AI Platform Core Foundation",
   "type": "module",
+  "bin": {
+    "cupaw": "./src/bin/cupaw.js"
+  },
   "engines": {
     "node": ">=22.0.0"
   },
