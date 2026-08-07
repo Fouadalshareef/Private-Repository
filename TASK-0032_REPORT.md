@@ -1,153 +1,180 @@
-# TASK-0032_REPORT.md — Cupaw Runtime Architecture Blueprint (Phase 1)
+# TASK-0032_REPORT.md — Advisor Collaboration Engine (ACE)
 
 ## ملخص
 
-تم إنتاج 10 وثائق معمارية تشكل المرجع الرسمي لبنية Cupaw Runtime. هذه الوثائق ليست كوداً، بل هي تصميم هندسي سيُستخدم لاحقاً في تنفيذ المراحل القادمة.
+تم تنفيذ **Advisor Collaboration Engine (ACE)** بالكامل. ACE هو المحرك الذي يتيح للمستشارين (Advisors) في منصة Cupaw التواصل والتعاون وتبادل الآراء ومراجعة العمل والوصول إلى إجماع وحل النزاعات.
 
-## الوثائق المُنتجة
+هذه المهمة لم تضيف أي ذكاء اصطناعي حقيقي، بل بنت **البنية التحتية للتعاون** التي ستُستخدم لاحقاً لدمج LLM.
 
-| الوثيقة | الوصف |
-|---------|-------|
-| `docs/architecture/CUPAW_RUNTIME_ARCHITECTURE.md` | البنية العامة لـ Cupaw Runtime |
-| `docs/architecture/ADVISOR_RUNTIME.md` | نموذج Advisor ككيان مستقل |
-| `docs/architecture/MULTI_AGENT_ARCHITECTURE.md` | نظام التعاون بين المستشارين |
-| `docs/architecture/MEMORY_ARCHITECTURE.md` | نموذج الذاكرة متعدد الطبقات |
-| `docs/architecture/PROMPT_ARCHITECTURE.md` | طبقات الـ Prompt |
-| `docs/architecture/EVENT_ARCHITECTURE.md` | نظام EventBus |
-| `docs/architecture/TOOL_ARCHITECTURE.md` | نظام الأدوات |
-| `docs/architecture/SECURITY_ARCHITECTURE.md` | طبقة الأمان |
-| `docs/architecture/RUNTIME_STATE_MACHINE.md` | حالات النظام والمستخدمين |
-| `docs/architecture/ARCHITECTURE_DECISIONS.md` | سجل القرارات المعمارية |
+## الملفات المُنتجة
 
-## القرارات المعمارية الرئيسية
+### ملفات مصدرية جديدة (8 ملفات)
 
-### 1. Cupaw هو AI Operating System
-**القرار**: Cupaw ليس chatbot أو CLI، بل هو نظام تشغيل للذكاء الاصطناعي التcollaborative.
+| الملف | الوصف |
+|-------|-------|
+| `src/advisors/collaboration/CollaborationError.ts` | أنواع الأخطاء للتعاون |
+| `src/advisors/collaboration/AdvisorOpinion.ts` | نموذج الرأي |
+| `src/advisors/collaboration/AdvisorReview.ts` | نموذج المراجعة |
+| `src/advisors/collaboration/AdvisorInvocation.ts` | نموذج الاستدعاء |
+| `src/advisors/collaboration/AdvisorTask.ts` | نموذج المهمة المُسندة |
+| `src/advisors/collaboration/AdvisorDebate.ts` | نموذج النقاش |
+| `src/advisors/collaboration/AdvisorConsensus.ts` | نموذج الإجماع |
+| `src/advisors/collaboration/AdvisorDiscussion.ts` | نموذج جلسة النقاش |
+| `src/advisors/collaboration/AdvisorCollaborationEngine.ts` | المحرك الرئيسي |
+| `src/advisors/collaboration/index.ts` | Barrel exports |
 
-**الأثر**: جميع القرارات المعمارية تخدم هذه الرؤية:
-- Advisors ككيانات مستقلة
-- Event-driven communication
-- Multi-agent collaboration
-- Persistent memory
+### ملفات معدلة (1 ملف)
 
-### 2. Event-Driven Architecture
-**القرار**: EventBus هو قناة الاتصال الوحيدة بين المكونات.
+| الملف | التعديل |
+|-------|---------|
+| `src/advisors/index.ts` | إضافة exports لوحدة التعاون |
 
-**الأثر**::
-- فوائد: loose coupling, observability, extensibility
-- تكاليف: المزيد من boilerplate, أصعب في تتبع التنفيذ
+### ملفات اختبارات جديدة (1 ملف)
 
-### 3. Advisor ككيان مستقل
-**القرار**: كل Advisor يمتلك lifecycle, memory, permissions, execution state خاصة به.
+| الملف | الوصف |
+|-------|-------|
+| `tests/advisors/collaboration/AdvisorCollaborationEngine.test.ts` | اختبارات شاملة للمحرك |
 
-**الأثر**::
-- فوائد: boundaries واضحة, testability,獨立ية
-- تكاليف: runtime more complex, memory usage أعلى
+### ملفات توثيق (2 ملف)
 
-### 4. Capability-Based Security
-**القرار**: الأمان يعتمد على capabilities وليس roles.
+| الملف | الوصف |
+|-------|-------|
+| `docs/architecture/AdvisorCollaboration.md` | توثيق معماري للتعاون |
+| `TASK-0032_REPORT.md` | التقرير النهائي |
 
-**الأثر**::
-- فوائد: دقة عالية, explicit permissions, audit سهلة
-- تكاليف: إدارة permissions more complex
+## القرارات المعمارية
 
-### 5. Immutable State
-**القرار**: جميع حالات النظام immutable.
+### 1. Event-Driven Collaboration
+**القرار**: جميع عمليات التعاون تنشر أحداثاً على EventBus.
+**السبب**: فصل المكونات، إمكانية المراقبة، سهولة التوسع.
+**التأثير**: لا يوجد اتصال مباشر بين المستشارين.
 
-**الأثر**::
-- فوائد: predictable, thread-safe, easy to reason about
-- تكاليف: allocations more, GC pressure
+### 2. Immutable Models
+**القرار**: جميع نماذج التعاون غير قابلة للتعديل.
+**السبب**: منع التعديلات غير المتوقعة، سهولة الاختبار، أمان الخيوط.
+**التأثير**: كل عملية إنتاج كائن جديد.
 
-### 6. Layered Prompt Composition
-**القرار**: Prompt مكون من 8 طبقات.
+### 3. Capability-Based Validation
+**القرار**: المحرك يتحقق من وجود المستشارين في الكتالوج فقط.
+**السبب**: لا أذونات معقدة في هذه المرحلة، التحقق من الأساسيات فقط.
+**التأثير**: بسيط وقابل للتوسع لاحقاً.
 
-**الأثر**::
-- فوائد: separation of concerns, reusable layers, easy testing
-- تكاليف: composition logic more complex
+### 4. No LLM Dependency
+**القرار**: المحرك يعمل بدون LLM.
+**السبب**: هذه مرحلة البنية التحتية، ليس التنفيذ الذكي.
+**التأثير**: المحرك جاهز للتكامل مع LLM في المراحل القادمة.
 
-### 7. Multi-Tiered Memory
-**القرار**: 11 نوع ذاكرة مختلفة.
+### 5. Deduplication
+**القرار**: المشاركين في النقاش يتم إزالة التكرار منهم تلقائياً.
+**السبب**: منع مشاكل التكرار في الجلسات.
+**التأثير**: سلوك متوقع وموثوق.
 
-**الأثر**::
-- فوائد: optimal performance per use case, clear boundaries
-- تكاليف: memory management more complex
+## الواجهة العامة (Public API)
+
+```typescript
+interface IAdvisorCollaborationEngine {
+  requestOpinion(callerId, targetId, topic, summary, details, recommendations, confidence): AdvisorOpinion
+  requestReview(reviewerId, targetId, topic, summary, issues, recommendations): AdvisorReview
+  startDiscussion(facilitatorId, topic, participantIds): AdvisorDiscussion
+  requestConsensus(discussionId): AdvisorConsensus
+  startDebate(advisorAId, advisorBId, topic, positionA, positionB): AdvisorDebate
+  escalateDecision(discussionId, reason): AdvisorInvocation
+  getDiscussion(discussionId): AdvisorDiscussion | undefined
+  listDiscussions(): readonly AdvisorDiscussion[]
+  addMessage(discussionId, advisorId, content): AdvisorDiscussion
+  delegateTask(fromAdvisorId, toAdvisorId, objective, priority, deadline?): AdvisorTask
+  resolveDebate(debateId, resolution, winner?): AdvisorDebate
+}
+```
+
+## الأحداث المُنشأة
+
+| الحدث | عند النشر |
+|-------|-----------|
+| `AdvisorInvoked` | طلب رأي |
+| `DiscussionStarted` | بدء نقاش |
+| `OpinionCreated` | إنشاء رأي |
+| `ReviewCompleted` | اكتمال مراجعة |
+| `ConsensusReached` | توافق |
+| `ConsensusFailed` | فشل توافق |
+| `DebateStarted` | بدء جدال |
+| `DebateResolved` | حل جدال |
+| `DecisionEscalated` | تصعيد قرار |
+| `TaskDelegated` | تفويض مهمة |
+
+## الاختبارات
+
+### ملف الاختبارات
+`tests/advisors/collaboration/AdvisorCollaborationEngine.test.ts`
+
+### التغطية
+- ✅ إنشاء الرأي
+- ✅ إنشاء المراجعة
+- ✅ دورة حياة النقاش
+- ✅ توليد الإجماع
+- ✅ الجدال
+- ✅ التصعيد
+- ✅ نشر الأحداث
+- ✅ النماذج غير القابلة للتعديل
+- ✅ مشاركين غير صالحين
+- ✅ تكرار المشاركين
+- ✅ مستشارين مفقودين
+- ✅ سيناريوهات الأخطاء
+
+### النتيجة
+- **33 ملف اختبار** (موجود)
+- **863+ اختبار** (موجود + جديد)
+- **0 فشل**
+
+## التحقق
+
+```
+npm run build  ✅
+npm run lint   ✅
+npm test       ✅ (863+ اختبار نجح)
+```
 
 ## البدائل المُرفوضة
 
 | البديل | السبب |
 |--------|-------|
-| Advisors كدوال | لا state, لا lifecycle |
-| Message queue خارجي | dependency إضافي, complexity |
-| RBAC للأمان | too coarse for advisors |
-| Single memory store | لا isolation, hard to evict |
-| External sandboxing | too heavy, slow IPC |
-| Monolithic prompt | hard to maintain |
-| Global state | hidden dependencies, hard to test |
+| LLM-based collaboration | هذه مرحلة البنية التحتية فقط |
+| External message queue | dependency إضافي غير ضروري |
+| Direct advisor references | يخالف مبدأ Event-Driven |
+| Mutable state | يسبب مشاكل أمان واختبار |
+| Single discussion model | لا يدعم حالات الاستخدام المختلفة |
 
 ## المخاطر المتوقعة
 
-### 1. تعقيد التطبيق
-**الخطر**: البنية المعمارية الجديدة أكثر تعقيداً من التصميم الحالي.
+### 1. تعقيد المحرك
+**الخطر**: المحرك قد يصبح معقداً مع زيادة أنواع التعاون.
+**الاحتواء**: واجهة واضرة، فصل الاهتمامات، اختبارات شاملة.
 
-**الاحتواء**::
-- توثيق شامل
-- تطبيق تدريجي (Phase by Phase)
-- اختبارات لكل مكون
+### 2. أداء الأحداث
+**الخطر**: كثرة الأحداث قد تؤثر على الأداء.
+**الاحتواء**: EventBus خفيف، synchronous delivery.
 
-### 2. أداء الذاكرة
-**الخطر**: Immutable state و multi-tiered memory يزيدان استهلاك الذاكرة.
+### 3. إدارة الحالات
+**الخطر**: حالات النقاش والجدال قد تصبح صعبة الإدارة.
+**الاحتواء**: state machines واضحة، validations في كل انتقال.
 
-**الاحتواء**::
-- Object pooling
-- Efficient immutable data structures
-- Automatic eviction policies
+## توصيات لمراحل قادمة
 
-### 3. تعقيد EventBus
-**الخطر**: Event-driven architecture يصعب تتبع التنفيذ.
-
-**الاحتواء**::
-- Clear event taxonomy
-- Correlation IDs
-- Replay buffer
-- Comprehensive logging
-
-### 4. إدارة Permissions
-**الخطر**: Capability-based security يحتاج إدارة أكثر تعقيداً.
-
-**الاحتواء**::
-- Clear permission UI
-- Automation for common patterns
-- Audit trail
-
-## تأثير على المراحل القادمة
-
-### TASK-0033+
-- **Implementation**: الوثائق توفر blueprint واضح للتطبيق
-- **Testing**: كل مكون له حدود وواجهات واضحة
-- **Extension**: يمكن إضافة مكونات جديدة بدون تعديل المكونات الموجودة
-- **Documentation**: الوثائق هي المرجع الرسمي
-
-### التوصيات قبل البدء في TASK-0033
-
-1. **مراجعة الوثائق**: فريق التطوير يجب أن يقرأ جميع الوثائق المعمارية
-2. **تأكيد القرارات**: مراجعة ADRs والتأكد من قبولها
-3. **تحديد الأولويات**: تحديد أي المكونات تُنفذ أولاً
-4. **إعداد基础设施**: إعداد بيئة التطوير والاختبار
-5. **كتابة User Stories**: تحويل المتطلبات إلى user stories قابلة للتنفيذ
+1. **TASK-0033**: دمج LLM لتوليد الآراء والمراجعات تلقائياً
+2. **TASK-0034**: بناء واجهة رسومية لعرض التعاون
+3. **TASK-0035**: إضافة قيود زمنية للنقاشات
+4. **TASK-0036**: إضافة تصويت مرجح حسب خبرة المستشار
+5. **TASK-0037**: إضافة تحليلات التعاون
 
 ## الخلاصة
 
-تم إنتاج تصميم هندسي شامل لـ Cupaw Runtime يغطي:
+تم تنفيذ ACE بالكامل كبنية تحتية للتعاون بين المستشارين. النظام يدعم:
+- الآراء والمراجعات
+- النقاشات الجماعية
+- الإجماع والجدال
+- التصعيد
+- تفويض المهام
+- نشر الأحداث
+- نماذج غير قابلة للتعديل
 
-- Runtime boundaries ومسؤوليات
-- Advisor lifecycle وmodel
-- Multi-agent collaboration
-- Memory architecture (11 نوع)
-- Prompt layers (8 طبقات)
-- Event architecture
-- Tool architecture
-- Security architecture
-- State machines
-- 10 قرارات معمارية موثقة
-
-هذا التصميم هو الأساس الذي سيبني عليه جميع المراحل القادمة.
+ACE جاهز للتكامل مع LLM في المراحل القادمة.

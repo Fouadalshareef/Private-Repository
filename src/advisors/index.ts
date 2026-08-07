@@ -54,7 +54,9 @@ export type {
   ToolAccessDecision,
   AdvisorToolScope,
 } from './IAdvisorSecurityPolicy.js';
-export { InvalidAdvisorSessionError } from './AdvisorError.js';
+export {
+  InvalidAdvisorSessionError,
+} from './AdvisorError.js';
 export {
   chiefAiArchitectPrompt,
   softwareEngineerPrompt,
@@ -68,3 +70,35 @@ export {
   qaEngineerPrompt,
   documentationWriterPrompt,
 } from './prompts/index.js';
+export {
+  AdvisorCollaborationEngine,
+  type AdvisorCollaborationEngineConfig,
+  type IAdvisorCollaborationEngine,
+  AdvisorOpinion,
+  createAdvisorOpinion,
+  OpinionStatus,
+  AdvisorReview,
+  createAdvisorReview,
+  ApprovalStatus,
+  AdvisorInvocation,
+  createAdvisorInvocation,
+  InvocationStatus,
+  AdvisorTask,
+  createAdvisorTask,
+  TaskStatus,
+  AdvisorDebate,
+  createAdvisorDebate,
+  DebateResolution,
+  AdvisorConsensus,
+  createAdvisorConsensus,
+  AdvisorDiscussion,
+  createAdvisorDiscussion,
+  DiscussionStatus,
+  CollaborationError,
+  AdvisorNotFoundError,
+  DiscussionNotFoundError,
+  DuplicateParticipantError,
+  InvalidDiscussionStateError,
+  DebateUnresolvedError,
+} from './collaboration/index.js';
+export type { DiscussionMessage } from './collaboration/index.js';
