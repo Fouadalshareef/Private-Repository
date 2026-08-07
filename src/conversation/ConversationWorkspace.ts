@@ -10,6 +10,7 @@ import type { SessionSwitchedPayload, SummaryUpdatedPayload } from './Conversati
 import { ConversationEvents } from './ConversationEvents.js';
 import { SharedNoteType } from './ConversationState.js';
 import { ConversationSessionManager } from './ConversationSessionManager.js';
+import type { MemoryBundle, MemoryRecord, MemoryNote, ProjectContext } from '../memory/types.js';
 
 /**
  * Configuration for ConversationWorkspace.
@@ -18,6 +19,7 @@ export interface ConversationWorkspaceConfig {
   readonly registry: ConversationRegistry;
   readonly eventBus?: IEventBus;
   readonly workspaceId: string;
+  readonly memory?: MemoryBundle;
 }
 
 /**
@@ -28,6 +30,7 @@ export class ConversationWorkspace {
   private readonly eventBus?: IEventBus;
   private readonly workspaceId: string;
   private readonly sessionManager: ConversationSessionManager;
+  private memory: MemoryBundle | undefined;
   private currentSessionId: string | undefined;
 
   constructor(config: ConversationWorkspaceConfig) {
@@ -35,6 +38,7 @@ export class ConversationWorkspace {
     this.eventBus = config.eventBus;
     this.workspaceId = config.workspaceId;
     this.sessionManager = new ConversationSessionManager({ eventBus: config.eventBus });
+    this.memory = config.memory;
   }
 
   /**
@@ -190,10 +194,91 @@ export class ConversationWorkspace {
   }
 
   /**
+   * Attaches a memory bundle to this workspace (idempotent).
+   */
+  setMemoryBundle(memory: MemoryBundle): void {
+    this.memory = memory;
+  }
+
+  /**
+   * Returns the attached memory bundle, if any.
+   */
+  getMemory(): MemoryBundle | undefined {
+    return this.memory;
+  }
+
+  /**
+   * Stores a short-term memory entry for the current session.
+   */
+  remember(key: string, value: unknown): MemoryRecord {
+    const mem = this.requireMemory();
+    const sessionId = this.getCurrentSession()?.sessionId ?? 'global';
+    return mem.shortTerm.set(sessionId, key, value);
+  }
+
+  /**
+   * Recalls a short-term memory entry for the current session.
+   */
+  recall(key: string): MemoryRecord | undefined {
+    const mem = this.requireMemory();
+    const sessionId = this.getCurrentSession()?.sessionId ?? 'global';
+    return mem.shortTerm.get(sessionId, key);
+  }
+
+  /**
+   * Forgets a short-term memory entry for the current session.
+   */
+  forget(key: string): boolean {
+    const mem = this.requireMemory();
+    const sessionId = this.getCurrentSession()?.sessionId ?? 'global';
+    return mem.shortTerm.delete(sessionId, key);
+  }
+
+  /**
+   * Lists all short-term memory entries for the current session.
+   */
+  listMemory(): readonly MemoryRecord[] {
+    const mem = this.requireMemory();
+    const sessionId = this.getCurrentSession()?.sessionId ?? 'global';
+    return mem.shortTerm.list(sessionId);
+  }
+
+  /**
+   * Adds a project-level note (persistent across sessions).
+   */
+  async addProjectNote(content: string, category = 'general'): Promise<MemoryNote> {
+    const mem = this.requireMemory();
+    if (!mem.projectContext) {
+      throw new Error('No project context store configured for this workspace');
+    }
+    const projectId = this.getWorkspace()?.projectId ?? 'default';
+    return mem.projectContext.addNote(projectId, category, content);
+  }
+
+  /**
+   * Loads the project-level context (persistent across sessions).
+   */
+  async getProjectContext(): Promise<ProjectContext | undefined> {
+    const mem = this.requireMemory();
+    if (!mem.projectContext) {
+      return undefined;
+    }
+    const projectId = this.getWorkspace()?.projectId ?? 'default';
+    return mem.projectContext.loadContext(projectId);
+  }
+
+  /**
    * Gets the workspace ID.
    */
   getWorkspaceId(): string {
     return this.workspaceId;
+  }
+
+  private requireMemory(): MemoryBundle {
+    if (!this.memory) {
+      throw new Error('No memory bundle attached to this workspace');
+    }
+    return this.memory;
   }
 
   private publishEvent<T>(type: string, payload: T): void {

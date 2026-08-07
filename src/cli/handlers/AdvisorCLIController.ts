@@ -1,4 +1,5 @@
 import { ConversationRuntime, ConversationWorkspace } from '../../conversation/index.js';
+import type { MemoryBundle, MemoryNote } from '../../memory/types.js';
 
 /**
  * Frozen output for the /active command.
@@ -50,6 +51,31 @@ export interface ResumeOutput {
 }
 
 /**
+ * Frozen output for the /remember command.
+ */
+export interface RememberOutput {
+  readonly key: string;
+  readonly value: unknown;
+  readonly storedAt: number;
+}
+
+/**
+ * Frozen output for the /recall command.
+ */
+export interface RecallOutput {
+  readonly key: string;
+  readonly found: boolean;
+  readonly value: unknown;
+}
+
+/**
+ * Frozen output for the /notes command.
+ */
+export interface NotesOutput {
+  readonly notes: readonly MemoryNote[];
+}
+
+/**
  * CLI controller output union type.
  */
 export type CLIControllerOutput =
@@ -57,7 +83,10 @@ export type CLIControllerOutput =
   | { readonly kind: 'session'; readonly value: SessionInfoOutput }
   | { readonly kind: 'sessions'; readonly value: SessionsListOutput }
   | { readonly kind: 'collaboration'; readonly value: CollaborationOutput }
-  | { readonly kind: 'resume'; readonly value: ResumeOutput };
+  | { readonly kind: 'resume'; readonly value: ResumeOutput }
+  | { readonly kind: 'remember'; readonly value: RememberOutput }
+  | { readonly kind: 'recall'; readonly value: RecallOutput }
+  | { readonly kind: 'notes'; readonly value: NotesOutput };
 
 /**
  * Integrates the ConversationRuntime into the CLI layer.
@@ -70,15 +99,20 @@ export type CLIControllerOutput =
 export class AdvisorCLIController {
   private readonly runtime: ConversationRuntime;
   private workspace: ConversationWorkspace;
+  private readonly memory: MemoryBundle | undefined;
   private currentSessionId: string | undefined;
 
-  constructor(runtime: ConversationRuntime) {
+  constructor(runtime: ConversationRuntime, memory?: MemoryBundle) {
     this.runtime = runtime;
+    this.memory = memory;
     let workspace = runtime.getCurrentWorkspace();
     if (!workspace) {
       workspace = runtime.createWorkspace('cli-default', 'CLI Default Workspace');
     }
     this.workspace = workspace;
+    if (memory) {
+      workspace.setMemoryBundle(memory);
+    }
     this.currentSessionId = undefined;
   }
 
@@ -114,6 +148,32 @@ export class AdvisorCLIController {
       case '/resume': {
         const value = this.getResumeInfo();
         return Object.freeze({ kind: 'resume', value });
+      }
+      case '/remember': {
+        const body = trimmed.slice('/remember'.length).trim();
+        const spaceIdx = body.indexOf(' ');
+        if (spaceIdx <= 0) {
+          return Object.freeze({ kind: 'unknown', command: trimmed });
+        }
+        const key = body.slice(0, spaceIdx).trim();
+        const value = body.slice(spaceIdx + 1).trim();
+        const record = this.workspace.remember(key, value);
+        return Object.freeze({
+          kind: 'remember',
+          value: Object.freeze({ key: record.key, value: record.value, storedAt: record.updatedAt }),
+        });
+      }
+      case '/recall': {
+        const key = trimmed.slice('/recall'.length).trim();
+        const record = key.length > 0 ? this.workspace.recall(key) : undefined;
+        return Object.freeze({
+          kind: 'recall',
+          value: Object.freeze({
+            key,
+            found: record !== undefined,
+            value: record?.value,
+          }),
+        });
       }
       default:
         return Object.freeze({ kind: 'unknown', command });

@@ -219,3 +219,103 @@ The layer is fully async (Node `fs/promises`), atomic (temp-file + rename), recu
 - Workspace ids are generated uniquely per creation; "startup resume" is demonstrated by hydrating a known workspace id from the store. A future enhancement could persist a workspace-id mapping for true cross-process restart resumption.
 - No real API calls; provider-independent and deterministic.
 - No breaking changes; all storage symbols are additive and exported via `src/index.ts`.
+
+---
+
+# TASK-0037 Report — Memory Architecture Foundation
+
+**Status:** ✅ Complete
+**Date:** 2026-08-07
+**Branch:** `main`
+**Commit:** `feat(memory): complete TASK-0037 - Memory Architecture Foundation`
+
+---
+
+## 1. Overview
+
+TASK-0037 establishes the multi-level memory foundation for Cupaw AI: a cleanly separated short-term (session-scoped, in-memory) and long-term (persistent) memory system, plus a project-level context store. It enables the system to retain project context, architectural notes, and preferences across sessions, and is designed interface-first so it can later be bound to Vector Databases without core changes. This builds directly on TASK-0036 (file persistence primitives).
+
+> **Path note:** The spec referenced `src/workspace/conversation-workspace.ts` and `src/cli/controllers/advisor-cli-controller.ts`. Those exact paths do not exist in the repo; the real modules are `src/conversation/ConversationWorkspace.ts` and `src/cli/handlers/AdvisorCLIController.ts`, which were integrated instead.
+
+---
+
+## 2. Modified & New Files
+
+### New Files
+| File | Purpose |
+|------|---------|
+| `src/memory/types.ts` | Interfaces (`IShortTermMemory`, `ILongTermMemory`, `IProjectContextStore`, `MemoryBundle`, `MemoryRecord`, `ProjectContext`, `MemoryNote`), errors (`MemoryError`, `MemoryKeyNotFoundError`, `PathTraversalError`), and `deepFreeze`/`cloneValue`/`cloneRecord` helpers. |
+| `src/memory/short-term-memory.ts` | `ShortTermMemory` — in-memory, per-session map; no persistence. |
+| `src/memory/long-term-memory.ts` | `LongTermMemory` — file-backed (`<baseDir>/long-term.json`), atomic writes, async. |
+| `src/memory/project-context-store.ts` | `ProjectContextStore` — file-backed per project (`<baseDir>/projects/<id>.json`), async. |
+| `src/memory/index.ts` | Barrel export for the memory module. |
+| `tests/memory/memory.test.ts` | 25 tests: unit CRUD for each tier + integration with `ConversationWorkspace` and `AdvisorCLIController`. |
+
+### Modified Files
+| File | Change |
+|------|--------|
+| `src/conversation/ConversationWorkspace.ts` | Added optional `memory?: MemoryBundle` to config; `setMemoryBundle`, `getMemory`, `remember`, `recall`, `forget`, `listMemory`, `addProjectNote`, `getProjectContext`, and a `requireMemory` guard. |
+| `src/cli/handlers/AdvisorCLIController.ts` | Constructor accepts optional `MemoryBundle` and attaches it to the workspace; added `/remember` and `/recall` commands + `RememberOutput`/`RecallOutput` types. |
+| `src/index.ts` | Added `export * from './memory/index.js';`. |
+
+---
+
+## 3. Architectural Decisions
+
+1. **Strict separation (Short vs Long term).** `ShortTermMemory` is purely in-memory (`Map` per session) with zero persistence; `LongTermMemory` and `ProjectContextStore` are file-backed. The two tiers never share storage internals.
+
+2. **Interface-first / swappable.** All three tiers are defined by interfaces. A future Vector DB implementation only needs to satisfy `ILongTermMemory` (or a new `IVectorMemory`) — no core code changes.
+
+3. **Immutability by contract.** Every getter deep-clones (`cloneValue` via JSON round-trip) and recursively freezes (`deepFreeze`) the returned data, so callers cannot mutate stored state except through the store APIs. `set` also freezes the stored copy.
+
+4. **Atomic, safe persistence (reuses TASK-0036 lessons).** File-backed stores write to a unique temp file (`<file>.<pid>.<ts>.<nonce>.tmp`) then `fs.rename`. The per-call `nonce` prevents the concurrent-write temp collision that was fixed in TASK-0036.
+
+5. **Path sandboxing.** `ProjectContextStore` validates project ids with `/^[A-Za-z0-9._-]+$/` and confirms resolved paths stay under the base dir (`PathTraversalError`).
+
+6. **Fault tolerance.** Missing/unreadable files degrade gracefully (fresh start for long-term; empty context for project). Short-term is process-lifetime only.
+
+7. **Backward compatibility.** Memory is optional everywhere. Workspaces/controllers without a bundle behave exactly as before; the new `remember`/`recall` methods throw a clear error only if no bundle is attached. `handleCommand` remains synchronous (no breaking signature change).
+
+---
+
+## 4. Test Results
+
+| Suite | Result |
+|-------|--------|
+| Unit tests (`vitest run`) | ✅ **1034 passed** (39 test files) |
+| Lint (`eslint .`) | ✅ **0 errors, 0 warnings** |
+| Build (`tsc`) | ✅ Passes |
+
+`tests/memory/memory.test.ts` — 25 tests:
+- **ShortTermMemory:** set/get/delete/list/clear, per-session scoping, frozen + isolated returned values.
+- **LongTermMemory:** set/get/list, cross-instance persistence, createdAt/updatedAt, delete, frozen records, empty-key rejection, atomic write (no tmp left).
+- **ProjectContextStore:** add/get notes, preferences, architectural decisions, full context round-trip, frozen context, path-traversal blocking.
+- **Integration — ConversationWorkspace:** remember/recall/forget/list within a session, persistent project notes across store instances, throws when no bundle attached.
+- **Integration — AdvisorCLIController:** `/remember` and `/recall` commands (including not-found case).
+
+Suite run 3× consecutively with 0 failures (no flakiness).
+
+**Success rate:** 100% (1034/1034).
+
+---
+
+## 5. Acceptance Criteria Verification
+
+| Criterion | Status |
+|-----------|--------|
+| Short-term (session) save/retrieve of notes & context | ✅ (`ShortTermMemory`, `remember`/`recall`) |
+| Long-term (project) save/retrieve of notes & context | ✅ (`LongTermMemory`, `ProjectContextStore`) |
+| Stored data protected from direct mutation without store APIs | ✅ (deep clone + `deepFreeze` on every read/write) |
+| Unit tests for CRUD of each tier | ✅ (25 memory tests) |
+| Integration tests binding memory to `ConversationWorkspace` | ✅ |
+| Interface-based, Vector-DB ready | ✅ (`IShortTermMemory`/`ILongTermMemory`/`IProjectContextStore`) |
+| No regressions; all existing tests pass | ✅ (1034 passing) |
+| Build & lint clean | ✅ |
+
+---
+
+## 6. Notes / Forward Dependencies
+
+- This layer is the foundation the **Planning Engine** and **Agents** will use to recall prior knowledge (per Future Impact). The `longTerm`/`projectContext` slots in `MemoryBundle` are the integration points.
+- No real API calls; provider-independent and deterministic.
+- No breaking changes; all memory symbols are additive and exported via `src/index.ts`.
