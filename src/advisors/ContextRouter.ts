@@ -6,73 +6,74 @@ import { AdvisorRoles } from './AdvisorRole.js';
 
 /**
  * Creates the default routing rule set based on the 11 core advisor personas.
+ * Includes multilingual keywords (English/Arabic) for improved routing accuracy.
  */
 function createDefaultRules(): readonly RoutingRule[] {
   return Object.freeze([
     Object.freeze({
       id: 'rule-architecture',
       advisorId: createAdvisorId(AdvisorRoles.CHIEF_AI_ARCHITECT),
-      keywords: Object.freeze(['architecture', 'architect', 'system design', 'scalability', 'technical vision', 'tech stack', 'monolith', 'microservice']),
+      keywords: Object.freeze(['architecture', 'architect', 'system design', 'scalability', 'technical vision', 'tech stack', 'monolith', 'microservice', 'معمارية', 'بنية', 'تصميم نظام', 'قابلية التوسع', 'رؤية تقنية']),
       priority: 30,
     }),
     Object.freeze({
       id: 'rule-software',
       advisorId: createAdvisorId(AdvisorRoles.SOFTWARE_ENGINEER),
-      keywords: Object.freeze(['implement', 'implementation', 'feature', 'code', 'coding', 'refactor', 'bug fix', 'develop']),
+      keywords: Object.freeze(['implement', 'implementation', 'feature', 'code', 'coding', 'refactor', 'bug fix', 'develop', 'تنفيذ', 'برمجة', 'كود', 'تطوير', 'إصلاح']),
       priority: 10,
     }),
     Object.freeze({
       id: 'rule-frontend',
       advisorId: createAdvisorId(AdvisorRoles.FRONTEND_ENGINEER),
-      keywords: Object.freeze(['frontend', 'front-end', 'react', 'vue', 'angular', 'css', 'html', 'ui component', 'state management', 'responsive']),
+      keywords: Object.freeze(['frontend', 'front-end', 'react', 'vue', 'angular', 'css', 'html', 'ui component', 'state management', 'responsive', 'واجهة أمامية', 'رياكت', 'vue', 'أنجولار', 'مكونات']),
       priority: 20,
     }),
     Object.freeze({
       id: 'rule-backend',
       advisorId: createAdvisorId(AdvisorRoles.BACKEND_ENGINEER),
-      keywords: Object.freeze(['backend', 'back-end', 'api', 'rest', 'graphql', 'server', 'endpoint', 'middleware', 'authentication', 'authorization']),
+      keywords: Object.freeze(['backend', 'back-end', 'api', 'rest', 'graphql', 'server', 'endpoint', 'middleware', 'authentication', 'authorization', 'خادم', 'واجهة برمجة', 'api', 'middeware', 'مصادقة']),
       priority: 20,
     }),
     Object.freeze({
       id: 'rule-ui',
       advisorId: createAdvisorId(AdvisorRoles.UI_DESIGNER),
-      keywords: Object.freeze(['ui', 'user interface', 'visual', 'color', 'typography', 'layout', 'design system', 'component library', 'spacing', 'style']),
+      keywords: Object.freeze(['ui', 'user interface', 'visual', 'color', 'typography', 'layout', 'design system', 'component library', 'spacing', 'style', 'تصميم واجهة', 'ألوان', 'خطوط', 'تخطيط', 'تصميم']),
       priority: 20,
     }),
     Object.freeze({
       id: 'rule-ux',
       advisorId: createAdvisorId(AdvisorRoles.UX_DESIGNER),
-      keywords: Object.freeze(['ux', 'user experience', 'usability', 'user flow', 'journey', 'information architecture', 'interaction', 'onboarding', 'navigation']),
+      keywords: Object.freeze(['ux', 'user experience', 'usability', 'user flow', 'journey', 'information architecture', 'interaction', 'onboarding', 'navigation', 'تجربة المستخدم', 'استخدام', 'تدفق', 'تنقل', 'بنية معلومات']),
       priority: 20,
     }),
     Object.freeze({
       id: 'rule-devops',
       advisorId: createAdvisorId(AdvisorRoles.DEVOPS_ENGINEER),
-      keywords: Object.freeze(['devops', 'ci/cd', 'pipeline', 'deploy', 'deployment', 'infrastructure', 'docker', 'kubernetes', 'terraform', 'monitoring', 'cloud']),
+      keywords: Object.freeze(['devops', 'ci/cd', 'pipeline', 'deploy', 'deployment', 'infrastructure', 'docker', 'kubernetes', 'terraform', 'monitoring', 'cloud', 'docker', 'kubernetes', 'نشر', 'بنية تحتية', 'سحابة']),
       priority: 25,
     }),
     Object.freeze({
       id: 'rule-security',
       advisorId: createAdvisorId(AdvisorRoles.SECURITY_ADVISOR),
-      keywords: Object.freeze(['security', 'vulnerability', 'threat', 'owasp', 'xss', 'sql injection', 'csrf', 'encryption', 'hashing', 'secure', 'penetration', 'audit']),
+      keywords: Object.freeze(['security', 'vulnerability', 'threat', 'owasp', 'xss', 'sql injection', 'csrf', 'encryption', 'hashing', 'secure', 'penetration', 'audit', 'أمن', 'ثغرات', 'تهديد', 'اختراق', 'تشفير']),
       priority: 30,
     }),
     Object.freeze({
       id: 'rule-database',
       advisorId: createAdvisorId(AdvisorRoles.DATABASE_ARCHITECT),
-      keywords: Object.freeze(['database', 'schema', 'sql', 'query', 'index', 'indexing', 'data model', 'migration', 'mongodb', 'postgres', 'mysql', 'redis', 'normalization']),
+      keywords: Object.freeze(['database', 'schema', 'sql', 'query', 'index', 'indexing', 'data model', 'migration', 'mongodb', 'postgres', 'mysql', 'redis', 'normalization', 'قاعدة بيانات', 'استعلام', 'فهرس', 'مخطط', ' sql']),
       priority: 20,
     }),
     Object.freeze({
       id: 'rule-qa',
       advisorId: createAdvisorId(AdvisorRoles.QA_ENGINEER),
-      keywords: Object.freeze(['test', 'testing', 'qa', 'quality', 'coverage', 'test plan', 'unit test', 'integration test', 'e2e', 'regression', 'defect']),
+      keywords: Object.freeze(['test', 'testing', 'qa', 'quality', 'coverage', 'test plan', 'unit test', 'e2e', 'defect', 'bug', 'اختبار', 'جودة', 'تغطية', 'أخطاء', ' QA']),
       priority: 20,
     }),
     Object.freeze({
-      id: 'rule-docs',
+      id: 'rule-documentation',
       advisorId: createAdvisorId(AdvisorRoles.DOCUMENTATION_WRITER),
-      keywords: Object.freeze(['documentation', 'document', 'readme', 'guide', 'tutorial', 'api reference', 'docstring', 'manual', 'wiki', 'changelog']),
+      keywords: Object.freeze(['document', 'documentation', 'readme', 'guide', 'tutorial', 'api reference', 'manual', 'wiki', 'changelog', 'توثيق', 'دليل', 'كتابة', 'مرجع']),
       priority: 15,
     }),
   ]);
@@ -130,7 +131,7 @@ export class ContextRouter implements IContextRouter {
 
     // 4. Keyword analysis on input
     const lowerInput = options.input.toLowerCase();
-    const ruleMatches: { rule: RoutingRule; matched: string[] }[] = [];
+    const ruleMatches: { rule: RoutingRule; matched: string[]; weightedScore: number }[] = [];
 
     // Evaluate default rules by priority
     const defaultRules = Array.from(this.rules.values())
@@ -140,7 +141,8 @@ export class ContextRouter implements IContextRouter {
     for (const rule of defaultRules) {
       const matched = rule.keywords.filter((kw) => lowerInput.includes(kw.toLowerCase()));
       if (matched.length > 0) {
-        ruleMatches.push({ rule, matched });
+        const weightedScore = matched.reduce((sum, kw) => sum + kw.length, 0);
+        ruleMatches.push({ rule, matched, weightedScore });
       }
     }
 
@@ -148,23 +150,28 @@ export class ContextRouter implements IContextRouter {
     for (const rule of customRules) {
       const matched = rule.keywords.filter((kw) => lowerInput.includes(kw.toLowerCase()));
       if (matched.length > 0) {
-        ruleMatches.push({ rule, matched });
+        const weightedScore = matched.reduce((sum, kw) => sum + kw.length, 0);
+        ruleMatches.push({ rule, matched, weightedScore });
       }
     }
 
     if (ruleMatches.length > 0) {
-      // Sort by: priority desc, matched keyword count desc
+      // Sort by: priority desc, matched keyword count desc, weighted score desc
       ruleMatches.sort((a, b) => {
         const priorityDiff = (b.rule.priority ?? 0) - (a.rule.priority ?? 0);
         if (priorityDiff !== 0) {
           return priorityDiff;
         }
-        return b.matched.length - a.matched.length;
+        const countDiff = b.matched.length - a.matched.length;
+        if (countDiff !== 0) {
+          return countDiff;
+        }
+        return b.weightedScore - a.weightedScore;
       });
       const best = ruleMatches[0];
       const advisor = this.catalog.get(best.rule.advisorId);
       if (advisor) {
-        const confidence = Math.min(0.95, 0.5 + best.matched.length * 0.15);
+        const confidence = Math.min(0.95, 0.5 + best.matched.length * 0.15 + best.weightedScore * 0.005);
         return this.result(advisor, best.rule.id.startsWith('rule-') ? 'keyword' : 'rule', confidence, best.matched);
       }
     }

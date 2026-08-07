@@ -172,10 +172,12 @@ export class CupawCLI {
     if (!this.config.memory.getSession(sessionId)) {
       this.config.memory.createSession(sessionId);
     }
-    this.config.sessionManager.createSession({
-      id: sessionId,
-      label: 'CLI Session',
-    });
+    if (!this.config.sessionManager.getSession(sessionId)) {
+      this.config.sessionManager.createSession({
+        id: sessionId,
+        label: 'CLI Session',
+      });
+    }
 
     const options: AgentExecuteOptions = {
       sessionId,

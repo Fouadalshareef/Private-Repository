@@ -3,6 +3,19 @@ import { createAdvisorId, createAdvisorCapability } from './AdvisorIdentity.js';
 import type { IAdvisor } from './IAdvisor.js';
 import { Advisor } from './Advisor.js';
 import { AdvisorRoles } from './AdvisorRole.js';
+import {
+  chiefAiArchitectPrompt,
+  softwareEngineerPrompt,
+  frontendEngineerPrompt,
+  backendEngineerPrompt,
+  uiDesignerPrompt,
+  uxDesignerPrompt,
+  devopsEngineerPrompt,
+  securityAdvisorPrompt,
+  databaseArchitectPrompt,
+  qaEngineerPrompt,
+  documentationWriterPrompt,
+} from './prompts/index.js';
 
 /**
  * Predefined capability identifiers.
@@ -93,6 +106,7 @@ export class AdvisorCatalog {
       capabilities: Object.freeze([...profile.capabilities]),
       allowedTools: Object.freeze([...profile.allowedTools]),
       metadata: Object.freeze({ ...profile.metadata }),
+      ...(profile.routingKeywords ? { routingKeywords: Object.freeze([...profile.routingKeywords]) } : {}),
     });
     return new Advisor(createAdvisorId(id), frozenProfile);
   }
@@ -109,9 +123,7 @@ export class AdvisorCatalog {
         'Enforce clean architecture, SOLID principles, and separation of concerns',
         'Review architectural decisions and propose evolution paths',
       ],
-      systemPrompt:
-        'You are the Chief AI Architect. Your responsibility is to guide system-level architecture decisions, ' +
-        'ensure scalability and maintainability, and enforce clean, AI-native design patterns across the platform.',
+      systemPrompt: chiefAiArchitectPrompt,
       capabilities: [
         createAdvisorCapability(AdvisorCapabilities.ARCHITECTURE),
         createAdvisorCapability(AdvisorCapabilities.CODE_REVIEW),
@@ -119,6 +131,10 @@ export class AdvisorCatalog {
       ],
       allowedTools: ['read_file', 'list_directory', 'search_workspace'],
       metadata: Object.freeze({ role: AdvisorRoles.CHIEF_AI_ARCHITECT, level: 'principal' }),
+      routingKeywords: Object.freeze([
+        'architecture', 'architect', 'system design', 'scalability', 'technical vision', 'tech stack', 'monolith', 'microservice',
+        'معمارية', 'بنية', 'تصميم نظام', 'قابلية التوسع', 'رؤية تقنية',
+      ]),
     });
   }
 
@@ -134,9 +150,7 @@ export class AdvisorCatalog {
         'Refactor legacy code and improve code quality',
         'Collaborate with other engineers to deliver cohesive solutions',
       ],
-      systemPrompt:
-        'You are a Software Engineer. Your responsibility is to design and implement robust, testable, ' +
-        'and maintainable software solutions that follow the project coding standards and best practices.',
+      systemPrompt: softwareEngineerPrompt,
       capabilities: [
         createAdvisorCapability(AdvisorCapabilities.BACKEND),
         createAdvisorCapability(AdvisorCapabilities.FRONTEND),
@@ -145,6 +159,10 @@ export class AdvisorCatalog {
       ],
       allowedTools: ['read_file', 'write_file', 'list_directory', 'search_workspace', 'execute_command'],
       metadata: Object.freeze({ role: AdvisorRoles.SOFTWARE_ENGINEER, level: 'senior' }),
+      routingKeywords: Object.freeze([
+        'implement', 'implementation', 'feature', 'code', 'coding', 'refactor', 'bug fix', 'develop',
+        'تنفيذ', 'برمجة', 'كود', 'تطوير', 'إصلاح',
+      ]),
     });
   }
 
@@ -160,9 +178,7 @@ export class AdvisorCatalog {
         'Optimize frontend performance and bundle size',
         'Ensure cross-browser compatibility and accessibility (a11y)',
       ],
-      systemPrompt:
-        'You are a Frontend Engineer. Your responsibility is to build responsive, accessible, ' +
-        'and high-performance user interfaces that deliver excellent user experiences.',
+      systemPrompt: frontendEngineerPrompt,
       capabilities: [
         createAdvisorCapability(AdvisorCapabilities.FRONTEND),
         createAdvisorCapability(AdvisorCapabilities.UI),
@@ -171,6 +187,10 @@ export class AdvisorCatalog {
       ],
       allowedTools: ['read_file', 'write_file', 'list_directory', 'search_workspace'],
       metadata: Object.freeze({ role: AdvisorRoles.FRONTEND_ENGINEER, level: 'senior' }),
+      routingKeywords: Object.freeze([
+        'frontend', 'front-end', 'react', 'vue', 'angular', 'css', 'html', 'ui component', 'state management', 'responsive',
+        'واجهة أمامية', 'رياكت', 'vue', 'أنجولار', 'مكونات',
+      ]),
     });
   }
 
@@ -186,9 +206,7 @@ export class AdvisorCatalog {
         'Implement authentication, authorization, and business logic',
         'Integrate with external services and systems',
       ],
-      systemPrompt:
-        'You are a Backend Engineer. Your responsibility is to design and implement robust, secure, ' +
-        'and scalable server-side systems, APIs, and data processing pipelines.',
+      systemPrompt: backendEngineerPrompt,
       capabilities: [
         createAdvisorCapability(AdvisorCapabilities.BACKEND),
         createAdvisorCapability(AdvisorCapabilities.ARCHITECTURE),
@@ -197,6 +215,10 @@ export class AdvisorCatalog {
       ],
       allowedTools: ['read_file', 'write_file', 'list_directory', 'search_workspace', 'execute_command'],
       metadata: Object.freeze({ role: AdvisorRoles.BACKEND_ENGINEER, level: 'senior' }),
+      routingKeywords: Object.freeze([
+        'backend', 'back-end', 'api', 'rest', 'graphql', 'server', 'endpoint', 'middleware', 'authentication', 'authorization',
+        'خادم', 'واجهة برمجة', 'api', 'middeware', 'مصادقة',
+      ]),
     });
   }
 
@@ -212,9 +234,7 @@ export class AdvisorCatalog {
         'Design accessible color palettes and typography scales',
         'Review UI implementation against design specifications',
       ],
-      systemPrompt:
-        'You are a UI Designer. Your responsibility is to ensure visual excellence, consistency, ' +
-        'and accessibility of the user interface through design systems and visual standards.',
+      systemPrompt: uiDesignerPrompt,
       capabilities: [
         createAdvisorCapability(AdvisorCapabilities.UI),
         createAdvisorCapability(AdvisorCapabilities.ACCESSIBILITY),
@@ -222,6 +242,10 @@ export class AdvisorCatalog {
       ],
       allowedTools: ['read_file', 'list_directory', 'search_workspace'],
       metadata: Object.freeze({ role: AdvisorRoles.UI_DESIGNER, level: 'senior' }),
+      routingKeywords: Object.freeze([
+        'ui', 'user interface', 'visual', 'color', 'typography', 'layout', 'design system', 'component library', 'spacing', 'style',
+        'تصميم واجهة', 'ألوان', 'خطوط', 'تخطيط', 'تصميم',
+      ]),
     });
   }
 
@@ -237,9 +261,7 @@ export class AdvisorCatalog {
         'Conduct usability heuristics reviews',
         'Ensure the experience is user-centered and accessible',
       ],
-      systemPrompt:
-        'You are a UX Designer. Your responsibility is to ensure the product is intuitive, usable, ' +
-        'and user-centered through thoughtful interaction design and usability analysis.',
+      systemPrompt: uxDesignerPrompt,
       capabilities: [
         createAdvisorCapability(AdvisorCapabilities.UX),
         createAdvisorCapability(AdvisorCapabilities.ACCESSIBILITY),
@@ -247,6 +269,10 @@ export class AdvisorCatalog {
       ],
       allowedTools: ['read_file', 'list_directory', 'search_workspace'],
       metadata: Object.freeze({ role: AdvisorRoles.UX_DESIGNER, level: 'senior' }),
+      routingKeywords: Object.freeze([
+        'ux', 'user experience', 'usability', 'user flow', 'journey', 'information architecture', 'interaction', 'onboarding', 'navigation',
+        'تجربة المستخدم', 'استخدام', 'تدفق', 'تنقل', 'بنية معلومات',
+      ]),
     });
   }
 
@@ -262,9 +288,7 @@ export class AdvisorCatalog {
         'Configure monitoring, alerting, and logging infrastructure',
         'Ensure deployment reliability, rollback, and disaster recovery plans',
       ],
-      systemPrompt:
-        'You are a DevOps Engineer. Your responsibility is to design and maintain reliable CI/CD pipelines, ' +
-        'cloud infrastructure, and operational practices that enable fast, safe, repeatable deployments.',
+      systemPrompt: devopsEngineerPrompt,
       capabilities: [
         createAdvisorCapability(AdvisorCapabilities.DEVOPS),
         createAdvisorCapability(AdvisorCapabilities.CLOUD),
@@ -272,6 +296,10 @@ export class AdvisorCatalog {
       ],
       allowedTools: ['read_file', 'write_file', 'list_directory', 'search_workspace', 'execute_command'],
       metadata: Object.freeze({ role: AdvisorRoles.DEVOPS_ENGINEER, level: 'senior' }),
+      routingKeywords: Object.freeze([
+        'devops', 'ci/cd', 'pipeline', 'deploy', 'deployment', 'infrastructure', 'docker', 'kubernetes', 'terraform', 'monitoring', 'cloud',
+        'docker', 'kubernetes', 'نشر', 'بنية تحتية', 'سحابة',
+      ]),
     });
   }
 
@@ -287,9 +315,7 @@ export class AdvisorCatalog {
         'Define secure coding standards and security requirements',
         'Recommend security controls, authentication, and authorization strategies',
       ],
-      systemPrompt:
-        'You are a Security Advisor. Your responsibility is to protect the platform by identifying, ' +
-        'assessing, and mitigating security risks across the application and infrastructure.',
+      systemPrompt: securityAdvisorPrompt,
       capabilities: [
         createAdvisorCapability(AdvisorCapabilities.SECURITY),
         createAdvisorCapability(AdvisorCapabilities.CODE_REVIEW),
@@ -297,6 +323,10 @@ export class AdvisorCatalog {
       ],
       allowedTools: ['read_file', 'list_directory', 'search_workspace'],
       metadata: Object.freeze({ role: AdvisorRoles.SECURITY_ADVISOR, level: 'principal' }),
+      routingKeywords: Object.freeze([
+        'security', 'vulnerability', 'threat', 'owasp', 'xss', 'sql injection', 'csrf', 'encryption', 'hashing', 'secure', 'penetration', 'audit',
+        'أمن', 'ثغرات', 'تهديد', 'اختراق', 'تشفير',
+      ]),
     });
   }
 
@@ -312,9 +342,7 @@ export class AdvisorCatalog {
         'Define indexing, partitioning, and data retention strategies',
         'Ensure data integrity, consistency, and migration safety',
       ],
-      systemPrompt:
-        'You are a Database Architect. Your responsibility is to design efficient, scalable, ' +
-        'and maintainable data storage solutions and ensure data integrity across the platform.',
+      systemPrompt: databaseArchitectPrompt,
       capabilities: [
         createAdvisorCapability(AdvisorCapabilities.DATABASE),
         createAdvisorCapability(AdvisorCapabilities.ARCHITECTURE),
@@ -322,6 +350,10 @@ export class AdvisorCatalog {
       ],
       allowedTools: ['read_file', 'list_directory', 'search_workspace'],
       metadata: Object.freeze({ role: AdvisorRoles.DATABASE_ARCHITECT, level: 'senior' }),
+      routingKeywords: Object.freeze([
+        'database', 'schema', 'sql', 'query', 'index', 'indexing', 'data model', 'migration', 'mongodb', 'postgres', 'mysql', 'redis', 'normalization',
+        'قاعدة بيانات', 'استعلام', 'فهرس', 'مخطط', ' sql',
+      ]),
     });
   }
 
@@ -337,9 +369,7 @@ export class AdvisorCatalog {
         'Evaluate test coverage and identify gaps',
         'Analyze defects and propose prevention measures',
       ],
-      systemPrompt:
-        'You are a QA Engineer. Your responsibility is to ensure the platform meets its quality bar ' +
-        'through comprehensive test strategies, rigorous coverage analysis, and defect prevention.',
+      systemPrompt: qaEngineerPrompt,
       capabilities: [
         createAdvisorCapability(AdvisorCapabilities.QA),
         createAdvisorCapability(AdvisorCapabilities.TESTING),
@@ -347,6 +377,10 @@ export class AdvisorCatalog {
       ],
       allowedTools: ['read_file', 'list_directory', 'search_workspace', 'execute_command'],
       metadata: Object.freeze({ role: AdvisorRoles.QA_ENGINEER, level: 'senior' }),
+      routingKeywords: Object.freeze([
+        'test', 'testing', 'qa', 'quality', 'coverage', 'test plan', 'unit test', 'e2e', 'defect', 'bug',
+        'اختبار', 'جودة', 'تغطية', 'أخطاء', ' QA',
+      ]),
     });
   }
 
@@ -362,15 +396,17 @@ export class AdvisorCatalog {
         'Ensure documentation consistency and discoverability',
         'Document architecture decisions and onboarding materials',
       ],
-      systemPrompt:
-        'You are a Documentation Writer. Your responsibility is to produce clear, accurate, ' +
-        'and well-structured technical documentation that makes the platform easy to understand and use.',
+      systemPrompt: documentationWriterPrompt,
       capabilities: [
         createAdvisorCapability(AdvisorCapabilities.DOCUMENTATION),
         createAdvisorCapability(AdvisorCapabilities.CODE_REVIEW),
       ],
       allowedTools: ['read_file', 'write_file', 'list_directory', 'search_workspace'],
       metadata: Object.freeze({ role: AdvisorRoles.DOCUMENTATION_WRITER, level: 'senior' }),
+      routingKeywords: Object.freeze([
+        'document', 'documentation', 'readme', 'guide', 'tutorial', 'api reference', 'manual', 'wiki', 'changelog',
+        'توثيق', 'دليل', 'كتابة', 'مرجع',
+      ]),
     });
   }
 }

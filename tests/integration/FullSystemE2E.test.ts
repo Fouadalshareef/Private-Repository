@@ -462,11 +462,12 @@ describe('FullSystemE2E', () => {
   describe('ContextRouter integration with advisor pipeline', () => {
     it('should route queries to correct advisors and verify their tool scopes', async () => {
       const testCases = [
-        { query: 'review this code for bugs', expectedAdvisor: 'software-engineer' },
+        { query: 'implement a new feature', expectedAdvisor: 'software-engineer' },
         { query: 'design a new UI component', expectedAdvisor: 'frontend-engineer' },
         { query: 'optimize database queries', expectedAdvisor: 'database-architect' },
         { query: 'set up CI/CD pipeline', expectedAdvisor: 'devops-engineer' },
         { query: 'check for security issues', expectedAdvisor: 'security-advisor' },
+        { query: 'write tests for the project', expectedAdvisor: 'qa-engineer' },
       ];
 
       const strategy = new ContextWindowStrategy();

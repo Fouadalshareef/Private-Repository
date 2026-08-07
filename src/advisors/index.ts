@@ -55,3 +55,16 @@ export type {
   AdvisorToolScope,
 } from './IAdvisorSecurityPolicy.js';
 export { InvalidAdvisorSessionError } from './AdvisorError.js';
+export {
+  chiefAiArchitectPrompt,
+  softwareEngineerPrompt,
+  frontendEngineerPrompt,
+  backendEngineerPrompt,
+  uiDesignerPrompt,
+  uxDesignerPrompt,
+  devopsEngineerPrompt,
+  securityAdvisorPrompt,
+  databaseArchitectPrompt,
+  qaEngineerPrompt,
+  documentationWriterPrompt,
+} from './prompts/index.js';

@@ -20,6 +20,7 @@ export interface AdvisorProfile {
   readonly capabilities: readonly AdvisorCapability[];
   readonly allowedTools: readonly string[];
   readonly metadata: Readonly<Record<string, string>>;
+  readonly routingKeywords?: readonly string[];
 }
 
 /**
@@ -49,5 +50,6 @@ export function createAdvisorProfile(profile: AdvisorProfile): AdvisorProfile {
     capabilities: Object.freeze([...profile.capabilities]),
     allowedTools: Object.freeze([...profile.allowedTools]),
     metadata: Object.freeze({ ...profile.metadata }),
+    ...(profile.routingKeywords ? { routingKeywords: Object.freeze([...profile.routingKeywords]) } : {}),
   });
 }

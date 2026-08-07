@@ -1,0 +1,11 @@
+export { chiefAiArchitectPrompt } from './chiefAiArchitect.js';
+export { softwareEngineerPrompt } from './softwareEngineer.js';
+export { frontendEngineerPrompt } from './frontendEngineer.js';
+export { backendEngineerPrompt } from './backendEngineer.js';
+export { uiDesignerPrompt } from './uiDesigner.js';
+export { uxDesignerPrompt } from './uxDesigner.js';
+export { devopsEngineerPrompt } from './devopsEngineer.js';
+export { securityAdvisorPrompt } from './securityAdvisor.js';
+export { databaseArchitectPrompt } from './databaseArchitect.js';
+export { qaEngineerPrompt } from './qaEngineer.js';
+export { documentationWriterPrompt } from './documentationWriter.js';

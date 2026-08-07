@@ -21,6 +21,7 @@ export class Advisor implements IAdvisor {
       capabilities: Object.freeze([...profile.capabilities]),
       allowedTools: Object.freeze([...profile.allowedTools]),
       metadata: Object.freeze({ ...profile.metadata }),
+      ...(profile.routingKeywords ? { routingKeywords: Object.freeze([...profile.routingKeywords]) } : {}),
     });
     Object.freeze(this);
   }
