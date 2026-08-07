@@ -123,6 +123,7 @@ export class AdvisorCLIController {
   /**
    * Switches the active advisor in the conversation workspace.
    * If the advisor already has a session, switches to it; otherwise creates a new one.
+   * Persists the resulting session to the runtime store when available.
    */
   public switchAdvisor(advisorId: string): void {
     const sessions = this.workspace.listSessions();
@@ -135,6 +136,16 @@ export class AdvisorCLIController {
       const session = this.workspace.createSession(advisorId);
       this.currentSessionId = session.sessionId;
     }
+
+    void this.runtime.persistCurrentSession().catch(() => undefined);
+  }
+
+  /**
+   * Deterministically persists the current session to the runtime store.
+   * Used to guarantee durability after interactions.
+   */
+  public async persist(): Promise<void> {
+    await this.runtime.persistCurrentSession();
   }
 
   /**

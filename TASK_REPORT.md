@@ -112,3 +112,110 @@ Fallback to `chief-ai-architect` (then `software-engineer`) is **restricted to q
 - Dynamic, LLM-generated advisor responses are **not** yet wired — the system intentionally runs on `MockAIProvider`. Full dynamic response generation is scheduled for **TASK-0042**.
 - No real API calls are made; the runtime remains provider-independent and deterministic.
 - No breaking changes introduced; all outputs are backward compatible.
+
+---
+
+# TASK-0036 Report — Conversation Persistence Layer
+
+**Status:** ✅ Complete
+**Date:** 2026-08-07
+**Branch:** `main`
+**Commit:** `feat(storage): complete TASK-0036 - Conversation Persistence Layer`
+
+---
+
+## 1. Overview
+
+TASK-0036 introduces a robust, file-based persistence layer that stores, loads, lists, and prunes conversation sessions and message histories under a sandboxed `.cupaw/sessions/` directory. It eliminates in-memory-only loss of chat history across CLI restarts and enables seamless cross-session resumption.
+
+The layer is fully async (Node `fs/promises`), atomic (temp-file + rename), recursively immutable on load (`Object.freeze`), and path-sandboxed against traversal. Integration with `ConversationRuntime` and `AdvisorCLIController` provides automatic hydration on startup and persistence during interaction.
+
+---
+
+## 2. Modified & New Files
+
+### New Files
+| File | Purpose |
+|------|---------|
+| `src/storage/types/StorageTypes.ts` | `StoredSession`, `SessionListEntry`, `ConversationStoreConfig`, `PruneOptions`, `PruneResult`, storage error classes (`StorageError`, `CorruptedSessionError`, `PathTraversalError`, `SessionWriteError`), and a `deepFreeze` helper. |
+| `src/storage/IConversationStore.ts` | `IConversationStore` interface (`saveSession`, `loadSession`, `listSessions`, `deleteSession`, `pruneSessions`). |
+| `src/storage/FileConversationStore.ts` | Async, atomic, path-safe implementation backed by JSON files. |
+| `src/storage/index.ts` | Barrel export for the storage module. |
+| `tests/storage/FileConversationStore.test.ts` | 20 tests covering CRUD, integrity, immutability, corruption isolation, path safety, pruning, and runtime integration. |
+
+### Modified Files
+| File | Change |
+|------|--------|
+| `src/conversation/ConversationSessionManager.ts` | Added `restoreSession(session)` to re-insert a persisted session without regenerating its id. |
+| `src/conversation/ConversationWorkspace.ts` | Added `restoreSession(session)` delegating to the session manager. |
+| `src/conversation/ConversationRuntime.ts` | Added optional `store?: IConversationStore` config; added `getStore`, `hydrateWorkspace`, `persistSession`, `persistCurrentSession`, `persistWorkspace`, `deleteStoredSession`, `listStoredSessions`, `pruneStoredSessions`. |
+| `src/cli/handlers/AdvisorCLIController.ts` | `switchAdvisor` now auto-persists the current session (fire-and-forget); added deterministic `async persist()`. |
+| `src/index.ts` | Added `export * from './storage/index.js';` so all storage types/symbols are publicly available. |
+
+---
+
+## 3. Architectural Decisions
+
+1. **Pure, provider-free persistence.** The store serializes the already-plain `AdvisorSession` shape (strings, numbers, arrays, objects). Dates are stored as epoch numbers, so JSON serialization/deserialization is lossless and safe.
+
+2. **Atomic writes.** Each write creates a unique temp file (`<id>.<pid>.<ts>.<nonce>.tmp`) then `fs.rename`s it onto the target. The per-call `nonce` guarantees uniqueness even under concurrent saves in the same millisecond, preventing a stale-temp `rename` race that previously caused intermittent `SessionWriteError` failures.
+
+3. **Recursive immutability.** Loaded sessions are reconstructed into a fresh `AdvisorSession` and passed through `deepFreeze`, freezing `messages` and `metadata` recursively — satisfying the immutability contract and the `Object.isFrozen` test.
+
+4. **Path sandboxing & traversal guard.** Session ids must match `/^[A-Za-z0-9._-]+$/`; otherwise `PathTraversalError` is thrown. Resolved paths are confirmed to stay under the resolved base directory with a `startsWith(base + sep)` check as defense in depth.
+
+5. **Corruption isolation.** `loadSession` throws `CorruptedSessionError` for missing/malformed files. `listSessions` never throws on a single bad file — it skips non-JSON and unparseable entries so one corrupt file cannot break enumeration.
+
+6. **Non-blocking I/O.** All disk operations use `fs/promises` exclusively; no synchronous filesystem calls.
+
+7. **Integration without breaking existing behavior.** The store is optional (`store?`). Without it, `ConversationRuntime` and `AdvisorCLIController` behave exactly as before (hydrate/persist become no-ops). `switchAdvisor` stays synchronous; auto-persist is a fire-and-forget that swallows errors, while an explicit `await controller.persist()` gives deterministic durability.
+
+---
+
+## 4. Test Results
+
+| Suite | Result |
+|-------|--------|
+| Unit tests (`vitest run`) | ✅ **1008 passed** (38 test files) |
+| Lint (`eslint .`) | ✅ **0 errors, 0 warnings** |
+| Build (`tsc`) | ✅ Passes |
+
+`tests/storage/FileConversationStore.test.ts` — 20 tests:
+- Full payload round-trip integrity (messages, metadata, status, timestamps).
+- Auto directory creation; atomic write leaves no `.tmp`.
+- Recursive immutability of loaded sessions (`Object.isFrozen`).
+- Corruption: `CorruptedSessionError` on malformed/missing; isolation during `listSessions`.
+- `listSessions` workspace filter, `deleteSession` true/false.
+- `pruneSessions` by `maxAgeMs` and by `maxCount`.
+- Path-traversal prevention (`../escape`, `../../etc/passwd`, `a/b`).
+- Runtime integration: `hydrateWorkspace` restores previous sessions; `AdvisorCLIController` persists during interaction; runtime-level pruning.
+
+**Flakiness fix:** the suite was run 8× consecutively with 0 failures after hardening the atomic-write temp filename.
+
+**Success rate:** 100% (1008/1008).
+
+---
+
+## 5. Acceptance Criteria Verification
+
+| Criterion | Status |
+|-----------|--------|
+| CRUD: `saveSession`, `loadSession`, `listSessions`, `deleteSession` | ✅ |
+| `ConversationRuntime` hydrates previous session on startup / persists during interaction | ✅ (`hydrateWorkspace`, `persistCurrentSession`, controller `persist()`) |
+| Automated directory creation + graceful fallback for damaged/unreadable files | ✅ |
+| Pruning by max age / session count | ✅ (`pruneSessions`, `pruneStoredSessions`) |
+| Recursively frozen loaded session objects | ✅ (`deepFreeze`) |
+| Atomic writes (temp + rename) | ✅ |
+| Safe date/metadata serialization | ✅ |
+| Path sandboxing / traversal safeguards | ✅ |
+| Non-blocking `fs/promises` I/O | ✅ |
+| No regressions; all existing tests pass | ✅ (1008 passing) |
+| Build & lint clean | ✅ |
+
+---
+
+## 6. Notes / Forward Dependencies
+
+- Workspace ids are generated uniquely per creation; "startup resume" is demonstrated by hydrating a known workspace id from the store. A future enhancement could persist a workspace-id mapping for true cross-process restart resumption.
+- No real API calls; provider-independent and deterministic.
+- No breaking changes; all storage symbols are additive and exported via `src/index.ts`.

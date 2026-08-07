@@ -172,6 +172,20 @@ export class ConversationSessionManager {
   }
 
   /**
+   * Restores an existing session (e.g. loaded from persistence) without
+   * regenerating its id. Used during hydration on startup.
+   */
+  restoreSession(session: AdvisorSession): AdvisorSession {
+    const restored = createAdvisorSession({
+      ...session,
+      messages: Object.freeze([...session.messages]),
+      metadata: Object.freeze({ ...session.metadata }),
+    });
+    this.sessions.set(restored.sessionId, restored);
+    return restored;
+  }
+
+  /**
    * Gets the current active session.
    */
   getCurrentSession(): AdvisorSession | undefined {

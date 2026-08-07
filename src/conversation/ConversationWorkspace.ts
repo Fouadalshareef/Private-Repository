@@ -182,6 +182,14 @@ export class ConversationWorkspace {
   }
 
   /**
+   * Restores a previously persisted session into this workspace.
+   * Used during hydration on startup; does not regenerate the session id.
+   */
+  restoreSession(session: AdvisorSession): AdvisorSession {
+    return this.sessionManager.restoreSession(session);
+  }
+
+  /**
    * Gets the workspace ID.
    */
   getWorkspaceId(): string {
