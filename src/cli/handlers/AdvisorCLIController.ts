@@ -122,6 +122,7 @@ export class AdvisorCLIController {
 
   /**
    * Switches the active advisor in the conversation workspace.
+   * If the advisor already has a session, switches to it; otherwise creates a new one.
    */
   public switchAdvisor(advisorId: string): void {
     const sessions = this.workspace.listSessions();

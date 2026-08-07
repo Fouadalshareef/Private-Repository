@@ -139,6 +139,50 @@ describe('AdvisorCLIHandler', () => {
       expect(() => handler.handleCommand('/switch')).toThrow('Usage: /switch <advisorId>');
     });
   });
+
+  describe('Arabic multilingual routing', () => {
+    it('should route UI design Arabic query to ui-designer or frontend-engineer', () => {
+      const output = handler.handleCommand('/route اريد بناء واجهة مستخدم');
+      expect(output.kind).toBe('route');
+      expect(['ui-designer', 'frontend-engineer']).toContain(output.value.advisor?.id);
+      expect(output.value.confidence).toBeGreaterThan(0.7);
+    });
+
+    it('should route UI design Arabic query (تصميم واجهة) to ui-designer or frontend-engineer', () => {
+      const output = handler.handleCommand('/route تصميم واجهة');
+      expect(output.kind).toBe('route');
+      expect(['ui-designer', 'frontend-engineer']).toContain(output.value.advisor?.id);
+      expect(output.value.confidence).toBeGreaterThan(0.7);
+    });
+
+    it('should route database Arabic query to database-architect', () => {
+      const output = handler.handleCommand('/route قواعد بيانات SQL');
+      expect(output.kind).toBe('route');
+      expect(output.value.advisor?.id).toBe('database-architect');
+      expect(output.value.confidence).toBeGreaterThan(0.7);
+    });
+
+    it('should route security Arabic query to security-advisor', () => {
+      const output = handler.handleCommand('/route ثغرات أمنية');
+      expect(output.kind).toBe('route');
+      expect(output.value.advisor?.id).toBe('security-advisor');
+      expect(output.value.confidence).toBeGreaterThan(0.7);
+    });
+
+    it('should route architecture Arabic query to chief-ai-architect', () => {
+      const output = handler.handleCommand('/route معمارية النظام');
+      expect(output.kind).toBe('route');
+      expect(output.value.advisor?.id).toBe('chief-ai-architect');
+      expect(output.value.confidence).toBeGreaterThan(0.5);
+    });
+
+    it('should route backend Arabic query to backend-engineer', () => {
+      const output = handler.handleCommand('/route واجهات برمجة التطبيقات');
+      expect(output.kind).toBe('route');
+      expect(output.value.advisor?.id).toBe('backend-engineer');
+      expect(output.value.confidence).toBeGreaterThan(0.7);
+    });
+  });
 });
 
 describe('AdvisorCLIHandler integration with AdvisorCatalog', () => {

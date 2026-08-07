@@ -133,7 +133,7 @@ export class AdvisorCatalog {
       metadata: Object.freeze({ role: AdvisorRoles.CHIEF_AI_ARCHITECT, level: 'principal' }),
       routingKeywords: Object.freeze([
         'architecture', 'architect', 'system design', 'scalability', 'technical vision', 'tech stack', 'monolith', 'microservice',
-        'معمارية', 'بنية', 'تصميم نظام', 'قابلية التوسع', 'رؤية تقنية',
+        'معمارية', 'بنية', 'تصميم نظام', 'قابلية التوسع', 'رؤية تقنية', 'هيكلية', 'بنية برمجية', 'مكونات',
       ]),
     });
   }
@@ -160,8 +160,8 @@ export class AdvisorCatalog {
       allowedTools: ['read_file', 'write_file', 'list_directory', 'search_workspace', 'execute_command'],
       metadata: Object.freeze({ role: AdvisorRoles.SOFTWARE_ENGINEER, level: 'senior' }),
       routingKeywords: Object.freeze([
-        'implement', 'implementation', 'feature', 'code', 'coding', 'refactor', 'bug fix', 'develop',
-        'تنفيذ', 'برمجة', 'كود', 'تطوير', 'إصلاح',
+        'implement', 'implementation', 'feature', 'code', 'coding', 'refactor', 'bug fix', 'develop', 'application',
+        'تنفيذ', 'برمجة', 'كود', 'تطوير', 'إصلاح', 'ميزة', 'وظيفة', 'تطبيق', 'هيكلة', 'إعادة هيكلة',
       ]),
     });
   }
@@ -188,8 +188,8 @@ export class AdvisorCatalog {
       allowedTools: ['read_file', 'write_file', 'list_directory', 'search_workspace'],
       metadata: Object.freeze({ role: AdvisorRoles.FRONTEND_ENGINEER, level: 'senior' }),
       routingKeywords: Object.freeze([
-        'frontend', 'front-end', 'react', 'vue', 'angular', 'css', 'html', 'ui component', 'state management', 'responsive',
-        'واجهة أمامية', 'رياكت', 'vue', 'أنجولار', 'مكونات',
+        'frontend', 'front-end', 'react', 'vue', 'angular', 'css', 'html', 'ui component', 'state management', 'responsive', 'browser', 'web',
+        'واجهة أمامية', 'رياكت', 'vue', 'أنجولار', 'مكونات', 'تصميم متجاوب', 'متصفح', 'موقع ويب', 'تطبيق ويب',
       ]),
     });
   }
@@ -217,7 +217,7 @@ export class AdvisorCatalog {
       metadata: Object.freeze({ role: AdvisorRoles.BACKEND_ENGINEER, level: 'senior' }),
       routingKeywords: Object.freeze([
         'backend', 'back-end', 'api', 'rest', 'graphql', 'server', 'endpoint', 'middleware', 'authentication', 'authorization',
-        'خادم', 'واجهة برمجة', 'api', 'middeware', 'مصادقة',
+        'خادم', 'واجهة برمجة', 'api', 'middeware', 'مصادقة', 'ترخيص', 'خدمة', 'مخدم', 'واجهات برمجة',
       ]),
     });
   }
@@ -243,8 +243,8 @@ export class AdvisorCatalog {
       allowedTools: ['read_file', 'list_directory', 'search_workspace'],
       metadata: Object.freeze({ role: AdvisorRoles.UI_DESIGNER, level: 'senior' }),
       routingKeywords: Object.freeze([
-        'ui', 'user interface', 'visual', 'color', 'typography', 'layout', 'design system', 'component library', 'spacing', 'style',
-        'تصميم واجهة', 'ألوان', 'خطوط', 'تخطيط', 'تصميم',
+        'ui', 'user interface', 'visual', 'color', 'typography', 'layout', 'design system', 'component library', 'spacing', 'style', 'interface', 'appearance',
+        'تصميم واجهة', 'ألوان', 'خطوط', 'تخطيط', 'تصميم', 'واجهة مستخدم', 'مظهر', 'نظام تصميم', 'مكتبة مكونات', 'مسافات',
       ]),
     });
   }
@@ -270,8 +270,8 @@ export class AdvisorCatalog {
       allowedTools: ['read_file', 'list_directory', 'search_workspace'],
       metadata: Object.freeze({ role: AdvisorRoles.UX_DESIGNER, level: 'senior' }),
       routingKeywords: Object.freeze([
-        'ux', 'user experience', 'usability', 'user flow', 'journey', 'information architecture', 'interaction', 'onboarding', 'navigation',
-        'تجربة المستخدم', 'استخدام', 'تدفق', 'تنقل', 'بنية معلومات',
+        'ux', 'user experience', 'usability', 'user flow', 'journey', 'information architecture', 'interaction', 'onboarding', 'navigation', 'accessibility',
+        'تجربة المستخدم', 'استخدام', 'تدفق', 'تنقل', 'بنية معلومات', 'تفاعل', 'سهولة الاستخدام', 'إرشاد',
       ]),
     });
   }
@@ -298,7 +298,7 @@ export class AdvisorCatalog {
       metadata: Object.freeze({ role: AdvisorRoles.DEVOPS_ENGINEER, level: 'senior' }),
       routingKeywords: Object.freeze([
         'devops', 'ci/cd', 'pipeline', 'deploy', 'deployment', 'infrastructure', 'docker', 'kubernetes', 'terraform', 'monitoring', 'cloud',
-        'docker', 'kubernetes', 'نشر', 'بنية تحتية', 'سحابة',
+        'docker', 'kubernetes', 'نشر', 'بنية تحتية', 'سحابة', 'عمليات', 'إصدار', 'مراقبة', 'حاويات',
       ]),
     });
   }
@@ -324,8 +324,8 @@ export class AdvisorCatalog {
       allowedTools: ['read_file', 'list_directory', 'search_workspace'],
       metadata: Object.freeze({ role: AdvisorRoles.SECURITY_ADVISOR, level: 'principal' }),
       routingKeywords: Object.freeze([
-        'security', 'vulnerability', 'threat', 'owasp', 'xss', 'sql injection', 'csrf', 'encryption', 'hashing', 'secure', 'penetration', 'audit',
-        'أمن', 'ثغرات', 'تهديد', 'اختراق', 'تشفير',
+        'security', 'vulnerability', 'threat', 'owasp', 'xss', 'sql injection', 'csrf', 'encryption', 'hashing', 'secure', 'penetration', 'audit', 'attack', 'authentication',
+        'أمن', 'ثغرات', 'تهديد', 'اختراق', 'تشفير', 'حماية', 'فجوة أمنية', 'هجوم', 'مصادقة آمنة', 'تدقيق أمني',
       ]),
     });
   }
@@ -352,7 +352,7 @@ export class AdvisorCatalog {
       metadata: Object.freeze({ role: AdvisorRoles.DATABASE_ARCHITECT, level: 'senior' }),
       routingKeywords: Object.freeze([
         'database', 'schema', 'sql', 'query', 'index', 'indexing', 'data model', 'migration', 'mongodb', 'postgres', 'mysql', 'redis', 'normalization',
-        'قاعدة بيانات', 'استعلام', 'فهرس', 'مخطط', ' sql',
+        'قاعدة بيانات', 'استعلام', 'فهرس', 'مخطط', ' sql', 'جداول', 'علاقات', 'قواعد بيانات', 'نموذج بيانات',
       ]),
     });
   }
@@ -378,8 +378,8 @@ export class AdvisorCatalog {
       allowedTools: ['read_file', 'list_directory', 'search_workspace', 'execute_command'],
       metadata: Object.freeze({ role: AdvisorRoles.QA_ENGINEER, level: 'senior' }),
       routingKeywords: Object.freeze([
-        'test', 'testing', 'qa', 'quality', 'coverage', 'test plan', 'unit test', 'e2e', 'defect', 'bug',
-        'اختبار', 'جودة', 'تغطية', 'أخطاء', ' QA',
+        'test', 'testing', 'qa', 'quality', 'coverage', 'test plan', 'unit test', 'e2e', 'defect', 'bug', 'automation', 'validation',
+        'اختبار', 'جودة', 'تغطية', 'أخطاء', ' QA', 'أتمتة', 'تحقق', 'عيب', 'اختبارات',
       ]),
     });
   }
@@ -405,7 +405,7 @@ export class AdvisorCatalog {
       metadata: Object.freeze({ role: AdvisorRoles.DOCUMENTATION_WRITER, level: 'senior' }),
       routingKeywords: Object.freeze([
         'document', 'documentation', 'readme', 'guide', 'tutorial', 'api reference', 'manual', 'wiki', 'changelog',
-        'توثيق', 'دليل', 'كتابة', 'مرجع',
+        'توثيق', 'دليل', 'كتابة', 'مرجع', 'تعليمات', 'كتاب', 'مقال', 'توثيق تقني',
       ]),
     });
   }

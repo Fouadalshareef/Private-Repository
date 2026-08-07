@@ -3,6 +3,7 @@ import type { CLIConfig } from './CLIConfig.js';
 import { CLICommandError } from './CLIError.js';
 import { AdvisorCLIHandler, CLIAdvisorsOutput } from './AdvisorCLIHandler.js';
 import { AdvisorCLIController, type CLIControllerOutput } from './handlers/AdvisorCLIController.js';
+import { AIProviderType } from '../ai/AIProviderType.js';
 import { createInterface } from 'node:readline';
 
 /**
@@ -351,8 +352,12 @@ Any other input will be sent to the AI agent as a chat message.
     const session = this.config.memory.getSession(this.currentSessionId);
     const securitySession = this.config.sessionManager.getSession(this.currentSessionId);
 
+    const providerType = this.config.aiProvider.getProviderType();
+    const providerLabel = providerType === AIProviderType.MOCK ? 'Mock Provider' : 'Live LLM Provider';
+
     console.log(`\nSession ID: ${this.currentSessionId}`);
     console.log(`Conversation messages: ${session?.messages.length ?? 0}`);
+    console.log(`AI Provider: ${providerLabel}`);
 
     if (securitySession) {
       console.log(`Security status: ${securitySession.status}`);

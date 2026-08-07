@@ -13,67 +13,100 @@ function createDefaultRules(): readonly RoutingRule[] {
     Object.freeze({
       id: 'rule-architecture',
       advisorId: createAdvisorId(AdvisorRoles.CHIEF_AI_ARCHITECT),
-      keywords: Object.freeze(['architecture', 'architect', 'system design', 'scalability', 'technical vision', 'tech stack', 'monolith', 'microservice', 'معمارية', 'بنية', 'تصميم نظام', 'قابلية التوسع', 'رؤية تقنية']),
+      keywords: Object.freeze([
+        'architecture', 'architect', 'system design', 'scalability', 'technical vision', 'tech stack', 'monolith', 'microservice',
+        'معمارية', 'بنية', 'تصميم نظام', 'قابلية التوسع', 'رؤية تقنية', 'هيكلية', 'بنية برمجية', 'مكونات',
+      ]),
       priority: 30,
     }),
     Object.freeze({
       id: 'rule-software',
       advisorId: createAdvisorId(AdvisorRoles.SOFTWARE_ENGINEER),
-      keywords: Object.freeze(['implement', 'implementation', 'feature', 'code', 'coding', 'refactor', 'bug fix', 'develop', 'تنفيذ', 'برمجة', 'كود', 'تطوير', 'إصلاح']),
+      keywords: Object.freeze([
+        'implement', 'implementation', 'feature', 'code', 'coding', 'refactor', 'bug fix', 'develop', 'application',
+        'تنفيذ', 'برمجة', 'كود', 'تطوير', 'إصلاح', 'ميزة', 'وظيفة', 'تطبيق', 'هيكلة', 'إعادة هيكلة',
+      ]),
       priority: 10,
     }),
     Object.freeze({
       id: 'rule-frontend',
       advisorId: createAdvisorId(AdvisorRoles.FRONTEND_ENGINEER),
-      keywords: Object.freeze(['frontend', 'front-end', 'react', 'vue', 'angular', 'css', 'html', 'ui component', 'state management', 'responsive', 'واجهة أمامية', 'رياكت', 'vue', 'أنجولار', 'مكونات']),
+      keywords: Object.freeze([
+        'frontend', 'front-end', 'react', 'vue', 'angular', 'css', 'html', 'ui component', 'state management', 'responsive', 'browser', 'web',
+        'واجهة أمامية', 'رياكت', 'vue', 'أنجولار', 'مكونات', 'تصميم متجاوب', 'متصفح', 'موقع ويب', 'تطبيق ويب',
+      ]),
       priority: 20,
     }),
     Object.freeze({
       id: 'rule-backend',
       advisorId: createAdvisorId(AdvisorRoles.BACKEND_ENGINEER),
-      keywords: Object.freeze(['backend', 'back-end', 'api', 'rest', 'graphql', 'server', 'endpoint', 'middleware', 'authentication', 'authorization', 'خادم', 'واجهة برمجة', 'api', 'middeware', 'مصادقة']),
+      keywords: Object.freeze([
+        'backend', 'back-end', 'api', 'rest', 'graphql', 'server', 'endpoint', 'middleware', 'authentication', 'authorization',
+        'خادم', 'واجهة برمجة', 'api', 'middeware', 'مصادقة', 'ترخيص', 'خدمة', 'مخدم', 'واجهات برمجة',
+      ]),
       priority: 20,
     }),
     Object.freeze({
       id: 'rule-ui',
       advisorId: createAdvisorId(AdvisorRoles.UI_DESIGNER),
-      keywords: Object.freeze(['ui', 'user interface', 'visual', 'color', 'typography', 'layout', 'design system', 'component library', 'spacing', 'style', 'تصميم واجهة', 'ألوان', 'خطوط', 'تخطيط', 'تصميم']),
+      keywords: Object.freeze([
+        'ui', 'user interface', 'visual', 'color', 'typography', 'layout', 'design system', 'component library', 'spacing', 'style', 'interface', 'appearance',
+        'تصميم واجهة', 'ألوان', 'خطوط', 'تخطيط', 'تصميم', 'واجهة مستخدم', 'مظهر', 'نظام تصميم', 'مكتبة مكونات', 'مسافات',
+      ]),
       priority: 20,
     }),
     Object.freeze({
       id: 'rule-ux',
       advisorId: createAdvisorId(AdvisorRoles.UX_DESIGNER),
-      keywords: Object.freeze(['ux', 'user experience', 'usability', 'user flow', 'journey', 'information architecture', 'interaction', 'onboarding', 'navigation', 'تجربة المستخدم', 'استخدام', 'تدفق', 'تنقل', 'بنية معلومات']),
+      keywords: Object.freeze([
+        'ux', 'user experience', 'usability', 'user flow', 'journey', 'information architecture', 'interaction', 'onboarding', 'navigation', 'accessibility',
+        'تجربة المستخدم', 'استخدام', 'تدفق', 'تنقل', 'بنية معلومات', 'تفاعل', 'سهولة الاستخدام', 'إرشاد',
+      ]),
       priority: 20,
     }),
     Object.freeze({
       id: 'rule-devops',
       advisorId: createAdvisorId(AdvisorRoles.DEVOPS_ENGINEER),
-      keywords: Object.freeze(['devops', 'ci/cd', 'pipeline', 'deploy', 'deployment', 'infrastructure', 'docker', 'kubernetes', 'terraform', 'monitoring', 'cloud', 'docker', 'kubernetes', 'نشر', 'بنية تحتية', 'سحابة']),
+      keywords: Object.freeze([
+        'devops', 'ci/cd', 'pipeline', 'deploy', 'deployment', 'infrastructure', 'docker', 'kubernetes', 'terraform', 'monitoring', 'cloud',
+        'docker', 'kubernetes', 'نشر', 'بنية تحتية', 'سحابة', 'عمليات', 'إصدار', 'مراقبة', 'حاويات',
+      ]),
       priority: 25,
     }),
     Object.freeze({
       id: 'rule-security',
       advisorId: createAdvisorId(AdvisorRoles.SECURITY_ADVISOR),
-      keywords: Object.freeze(['security', 'vulnerability', 'threat', 'owasp', 'xss', 'sql injection', 'csrf', 'encryption', 'hashing', 'secure', 'penetration', 'audit', 'أمن', 'ثغرات', 'تهديد', 'اختراق', 'تشفير']),
+      keywords: Object.freeze([
+        'security', 'vulnerability', 'threat', 'owasp', 'xss', 'sql injection', 'csrf', 'encryption', 'hashing', 'secure', 'penetration', 'audit', 'attack', 'authentication',
+        'أمن', 'ثغرات', 'تهديد', 'اختراق', 'تشفير', 'حماية', 'فجوة أمنية', 'هجوم', 'مصادقة آمنة', 'تدقيق أمني',
+      ]),
       priority: 30,
     }),
     Object.freeze({
       id: 'rule-database',
       advisorId: createAdvisorId(AdvisorRoles.DATABASE_ARCHITECT),
-      keywords: Object.freeze(['database', 'schema', 'sql', 'query', 'index', 'indexing', 'data model', 'migration', 'mongodb', 'postgres', 'mysql', 'redis', 'normalization', 'قاعدة بيانات', 'استعلام', 'فهرس', 'مخطط', ' sql']),
+      keywords: Object.freeze([
+        'database', 'schema', 'sql', 'query', 'index', 'indexing', 'data model', 'migration', 'mongodb', 'postgres', 'mysql', 'redis', 'normalization',
+        'قاعدة بيانات', 'استعلام', 'فهرس', 'مخطط', ' sql', 'جداول', 'علاقات', 'قواعد بيانات', 'نموذج بيانات',
+      ]),
       priority: 20,
     }),
     Object.freeze({
       id: 'rule-qa',
       advisorId: createAdvisorId(AdvisorRoles.QA_ENGINEER),
-      keywords: Object.freeze(['test', 'testing', 'qa', 'quality', 'coverage', 'test plan', 'unit test', 'e2e', 'defect', 'bug', 'اختبار', 'جودة', 'تغطية', 'أخطاء', ' QA']),
+      keywords: Object.freeze([
+        'test', 'testing', 'qa', 'quality', 'coverage', 'test plan', 'unit test', 'e2e', 'defect', 'bug', 'automation', 'validation',
+        'اختبار', 'جودة', 'تغطية', 'أخطاء', ' QA', 'أتمتة', 'تحقق', 'عيب', 'اختبارات',
+      ]),
       priority: 20,
     }),
     Object.freeze({
       id: 'rule-documentation',
       advisorId: createAdvisorId(AdvisorRoles.DOCUMENTATION_WRITER),
-      keywords: Object.freeze(['document', 'documentation', 'readme', 'guide', 'tutorial', 'api reference', 'manual', 'wiki', 'changelog', 'توثيق', 'دليل', 'كتابة', 'مرجع']),
+      keywords: Object.freeze([
+        'document', 'documentation', 'readme', 'guide', 'tutorial', 'api reference', 'manual', 'wiki', 'changelog',
+        'توثيق', 'دليل', 'كتابة', 'مرجع', 'تعليمات', 'كتاب', 'مقال', 'توثيق تقني',
+      ]),
       priority: 15,
     }),
   ]);

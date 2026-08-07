@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { ConversationRegistry } from '../../src/conversation/ConversationRegistry.js';
 import { ConversationRuntime } from '../../src/conversation/ConversationRuntime.js';
 import { AdvisorCLIController, type CLIControllerOutput } from '../../src/cli/handlers/AdvisorCLIController.js';
+import { AdvisorCatalog } from '../../src/advisors/AdvisorCatalog.js';
+import { ContextRouter } from '../../src/advisors/ContextRouter.js';
 
 describe('AdvisorCLIController', () => {
   let registry: ConversationRegistry;
@@ -165,6 +167,79 @@ describe('AdvisorCLIController', () => {
     it('should handle whitespace-only input', () => {
       const output = controller.handleCommand('   ');
       expect((output as { kind: string }).kind).toBe('unknown');
+    });
+  });
+
+  describe('session resilience', () => {
+    it('should not create duplicate sessions on consecutive switches to same advisor', () => {
+      controller.switchAdvisor('advisor-1');
+      const session1 = controller.getActiveAdvisor().sessionId;
+      controller.switchAdvisor('advisor-1');
+      const session2 = controller.getActiveAdvisor().sessionId;
+      expect(session1).toBe(session2);
+      const sessions = controller.handleCommand('/sessions') as { kind: 'sessions'; value: SessionsListOutput };
+      expect(sessions.value.sessions).toHaveLength(1);
+    });
+
+    it('should handle rapid advisor switches without state corruption', () => {
+      const advisors = ['advisor-1', 'advisor-2', 'advisor-1', 'advisor-3', 'advisor-2'];
+      for (const advisor of advisors) {
+        controller.switchAdvisor(advisor);
+      }
+      const active = controller.getActiveAdvisor();
+      expect(active.advisorId).toBe('advisor-2');
+      const sessions = controller.handleCommand('/sessions') as { kind: 'sessions'; value: SessionsListOutput };
+      expect(sessions.value.sessions).toHaveLength(3);
+    });
+
+    it('should preserve session state across rapid switches', () => {
+      controller.switchAdvisor('advisor-1');
+      const info1 = controller.getSessionInfo();
+      controller.switchAdvisor('advisor-2');
+      controller.switchAdvisor('advisor-1');
+      const info3 = controller.getSessionInfo();
+      expect(info3.sessionId).toBe(info1.sessionId);
+      expect(info3.advisorId).toBe('advisor-1');
+    });
+  });
+
+  describe('Arabic multilingual routing (ContextRouter integration)', () => {
+    const catalog = new AdvisorCatalog();
+    const router = new ContextRouter(catalog);
+
+    it('should route "اريد بناء واجهة مستخدم" to ui-designer or frontend-engineer (conf > 70%)', () => {
+      const result = router.route({ input: 'اريد بناء واجهة مستخدم' });
+      expect(['ui-designer', 'frontend-engineer']).toContain(result.advisor.id);
+      expect(result.confidence).toBeGreaterThan(0.7);
+    });
+
+    it('should route "تصميم واجهة" to ui-designer or frontend-engineer (conf > 70%)', () => {
+      const result = router.route({ input: 'تصميم واجهة' });
+      expect(['ui-designer', 'frontend-engineer']).toContain(result.advisor.id);
+      expect(result.confidence).toBeGreaterThan(0.7);
+    });
+
+    it('should route "قواعد بيانات SQL" to database-architect', () => {
+      const result = router.route({ input: 'قواعد بيانات SQL' });
+      expect(result.advisor.id).toBe('database-architect');
+      expect(result.confidence).toBeGreaterThan(0.7);
+    });
+
+    it('should route "ثغرات أمنية" to security-advisor', () => {
+      const result = router.route({ input: 'ثغرات أمنية' });
+      expect(result.advisor.id).toBe('security-advisor');
+      expect(result.confidence).toBeGreaterThan(0.7);
+    });
+
+    it('should route "معمارية النظام" to chief-ai-architect', () => {
+      const result = router.route({ input: 'معمارية النظام' });
+      expect(result.advisor.id).toBe('chief-ai-architect');
+      expect(result.confidence).toBeGreaterThan(0.5);
+    });
+
+    it('should restrict fallback only to zero keyword intersections', () => {
+      const result = router.route({ input: 'zzz-qwerty-unknown-term' });
+      expect(result.matchedBy).toBe('fallback');
     });
   });
 });

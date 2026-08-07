@@ -1,3 +1,4 @@
+import { AIProviderType } from '../src/ai/AIProviderType.js';
 import { describe, it, expect, vi } from 'vitest';
 import { Bootstrap } from '../src/bootstrap/Bootstrap.js';
 import { LogLevel } from '../src/logging/LogLevel.js';
@@ -93,6 +94,11 @@ describe('CLIIntegration', () => {
     it('should use MockAIProvider when none provided', () => {
       const config = createTestConfig();
       expect(config.aiProvider.getCapabilities().supportsStreaming).toBe(true);
+    });
+
+    it('should indicate Mock Provider mode by default', () => {
+      const config = createTestConfig();
+      expect(config.aiProvider.getProviderType()).toBe(AIProviderType.MOCK);
     });
 
     it('should emit SESSION_CREATED event when session manager creates a session', () => {
