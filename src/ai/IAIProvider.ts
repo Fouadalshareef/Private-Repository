@@ -1,6 +1,7 @@
 import type { AIMessage } from './AIMessage.js';
 import type { AIResponse } from './AIResponse.js';
 import type { AIProviderType } from './AIProviderType.js';
+import type { ProviderHealthStatus } from './ProviderHealthStatus.js';
 
 /**
  * Options for AI completion requests.
@@ -110,4 +111,46 @@ export interface IAIProvider {
    * Checks if the provider is properly configured and available.
    */
   isAvailable(): boolean;
+
+  /**
+   * Returns the provider type identifier.
+   */
+  getProviderType(): AIProviderType;
+
+  /**
+   * Counts tokens for the given messages.
+   *
+   * @param messages The conversation messages.
+   * @returns The estimated token count.
+   */
+  countTokens(messages: readonly AIMessage[]): Promise<number>;
+
+  /**
+   * Lists all available models for this provider.
+   *
+   * @returns An array of model identifiers.
+   */
+  listModels(): Promise<string[]>;
+
+  /**
+   * Performs a health check on the provider.
+   *
+   * @returns The health status of the provider.
+   */
+  healthCheck(): Promise<ProviderHealthStatus>;
+
+  /**
+   * Whether the provider supports tool/function calling.
+   */
+  supportsTools(): boolean;
+
+  /**
+   * Whether the provider supports vision/multimodal inputs.
+   */
+  supportsVision(): boolean;
+
+  /**
+   * Whether the provider supports streaming responses.
+   */
+  supportsStreaming(): boolean;
 }

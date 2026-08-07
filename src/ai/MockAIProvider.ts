@@ -1,6 +1,7 @@
 import type { IAIProvider, AIProviderCapabilities, AIProviderInfo } from './IAIProvider.js';
 import type { AIMessage } from './AIMessage.js';
 import type { AIResponse } from './AIResponse.js';
+import { ProviderHealthStatus } from './ProviderHealthStatus.js';
 import { AIProviderType } from './AIProviderType.js';
 import { MessageRole } from './AIMessage.js';
 import { FinishReason } from './AIResponse.js';
@@ -84,6 +85,37 @@ export class MockAIProvider implements IAIProvider {
 
   isAvailable(): boolean {
     return this.isAvailableFlag;
+  }
+
+  getProviderType(): AIProviderType {
+    return AIProviderType.MOCK;
+  }
+
+  async countTokens(messages: readonly AIMessage[]): Promise<number> {
+    return messages.reduce((total, message) => total + Math.ceil(message.content.length / 4), 0);
+  }
+
+  async listModels(): Promise<string[]> {
+    return [...this.models];
+  }
+
+  async healthCheck(): Promise<ProviderHealthStatus> {
+    if (!this.isAvailableFlag) {
+      return ProviderHealthStatus.OFFLINE;
+    }
+    return ProviderHealthStatus.READY;
+  }
+
+  supportsTools(): boolean {
+    return false;
+  }
+
+  supportsVision(): boolean {
+    return false;
+  }
+
+  supportsStreaming(): boolean {
+    return true;
   }
 
   /**

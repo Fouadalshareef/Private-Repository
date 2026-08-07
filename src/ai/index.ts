@@ -5,4 +5,15 @@ export { AIProviderError, ProviderNotFoundError, APIKeyMissingError, ProviderRes
 export { AIProviderEvents, AIProviderEventName } from './AIProviderEvents.js';
 export { IAIProvider, AICompletionOptions, AIStreamOptions, AIProviderCapabilities, AIProviderInfo } from './IAIProvider.js';
 export { AIProviderRegistry } from './AIProviderRegistry.js';
+export { AIProviderFactory, type AIProviderFactoryConfig } from './AIProviderFactory.js';
+export { ProviderHealthStatus } from './ProviderHealthStatus.js';
 export { MockAIProvider, MockAIProviderOptions } from './MockAIProvider.js';
+export {
+  BaseProvider,
+  MockProvider,
+  OpenAIProvider,
+  GeminiProvider,
+  AnthropicProvider,
+  OpenRouterProvider,
+  OllamaProvider,
+} from './providers/index.js';

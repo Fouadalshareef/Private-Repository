@@ -6,6 +6,8 @@ export enum AIProviderType {
   ANTHROPIC = 'anthropic',
   OLLAMA = 'ollama',
   MOCK = 'mock',
+  GEMINI = 'gemini',
+  OPENROUTER = 'openrouter',
 }
 
 /**
