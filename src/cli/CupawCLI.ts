@@ -2,6 +2,7 @@ import type { AgentExecuteOptions } from '../agent/IAgentExecutor.js';
 import type { CLIConfig } from './CLIConfig.js';
 import { CLICommandError } from './CLIError.js';
 import { AdvisorCLIHandler, CLIAdvisorsOutput } from './AdvisorCLIHandler.js';
+import { AdvisorCLIController, type CLIControllerOutput } from './handlers/AdvisorCLIController.js';
 import { createInterface } from 'node:readline';
 
 /**
@@ -39,6 +40,7 @@ export class CupawCLI {
   private readonly rl: ReturnType<typeof createInterface>;
   private readonly currentSessionId: string;
   private readonly advisorHandler: AdvisorCLIHandler;
+  private readonly controller: AdvisorCLIController;
   private running = false;
 
   constructor(config: CLIConfig) {
@@ -46,6 +48,7 @@ export class CupawCLI {
     this.rl = createReadlineInterface();
     this.currentSessionId = 'cli-session';
     this.advisorHandler = new AdvisorCLIHandler();
+    this.controller = new AdvisorCLIController(config.conversationRuntime);
   }
 
   /**
@@ -111,7 +114,19 @@ export class CupawCLI {
     const advisorOutput = this.advisorHandler.handleCommand(input);
 
     if ((advisorOutput as { readonly kind: string }).kind !== 'unknown') {
+      if ((advisorOutput as { kind: 'switch' }).kind === 'switch') {
+        const switchOutput = advisorOutput as { kind: 'switch'; value: { advisorId: string | undefined } };
+        if (switchOutput.value.advisorId) {
+          this.controller.switchAdvisor(switchOutput.value.advisorId);
+        }
+      }
       this.printAdvisorsOutput(advisorOutput as CLIAdvisorsOutput);
+      return;
+    }
+
+    const controllerOutput = this.controller.handleCommand(input);
+    if ((controllerOutput as { readonly kind: string }).kind !== 'unknown') {
+      this.printControllerOutput(controllerOutput as CLIControllerOutput);
       return;
     }
 
@@ -205,6 +220,65 @@ export class CupawCLI {
   }
 
   /**
+   * Prints controller-specific command output.
+   */
+  private printControllerOutput(output: CLIControllerOutput): void {
+    switch (output.kind) {
+      case 'active': {
+        const { active, advisorId, workspaceId, sessionId } = output.value;
+        console.log(`\nActive Advisor:`);
+        console.log(`  Active: ${active}`);
+        console.log(`  Advisor ID: ${advisorId ?? 'none'}`);
+        console.log(`  Workspace ID: ${workspaceId ?? 'none'}`);
+        console.log(`  Session ID: ${sessionId ?? 'none'}`);
+        console.log('');
+        break;
+      }
+      case 'session': {
+        const { sessionId, advisorId, workspaceId, messageCount, status } = output.value;
+        console.log(`\nSession Info:`);
+        console.log(`  Session ID: ${sessionId}`);
+        console.log(`  Advisor ID: ${advisorId}`);
+        console.log(`  Workspace ID: ${workspaceId}`);
+        console.log(`  Messages: ${messageCount}`);
+        console.log(`  Status: ${status}`);
+        console.log('');
+        break;
+      }
+      case 'sessions': {
+        const { sessions } = output.value;
+        console.log(`\nSessions (${sessions.length}):`);
+        for (const session of sessions) {
+          console.log(`  [${session.sessionId}] advisor=${session.advisorId} messages=${session.messageCount} status=${session.status}`);
+        }
+        console.log('');
+        break;
+      }
+      case 'collaboration': {
+        const { pendingReviews, pendingQuestions, sharedNotes } = output.value;
+        console.log(`\nCollaboration Status:`);
+        console.log(`  Pending Reviews: ${pendingReviews}`);
+        console.log(`  Pending Questions: ${pendingQuestions}`);
+        console.log(`  Shared Notes: ${sharedNotes}`);
+        console.log('');
+        break;
+      }
+      case 'resume': {
+        const { project, advisor, currentGoal, lastDecision, pendingTasks, summary } = output.value;
+        console.log(`\nResume Info:`);
+        console.log(`  Project: ${project}`);
+        console.log(`  Advisor: ${advisor ?? 'none'}`);
+        console.log(`  Current Goal: ${currentGoal ?? 'none'}`);
+        console.log(`  Last Decision: ${lastDecision ?? 'none'}`);
+        console.log(`  Pending Tasks: ${pendingTasks}`);
+        console.log(`  Summary: ${summary ?? 'none'}`);
+        console.log('');
+        break;
+      }
+    }
+  }
+
+  /**
    * Prints advisor-specific command output.
    */
   private printAdvisorsOutput(output: CLIAdvisorsOutput): void {
@@ -260,6 +334,10 @@ Available commands:
   /advisors    List all available advisors
   /route <query>  Route a query to the best advisor
   /switch <advisorId>  Switch to a specific advisor
+  /active      Show currently active advisor details
+  /sessions    List all conversation sessions
+  /collaboration  Show collaboration status
+  /resume      Show resume information
   /exit, /quit Exit the CLI
 
 Any other input will be sent to the AI agent as a chat message.

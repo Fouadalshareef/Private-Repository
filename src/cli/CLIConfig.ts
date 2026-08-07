@@ -33,6 +33,8 @@ import { SessionManager } from '../security/SessionManager.js';
 import { ToolAuthorizationEngine } from '../security/ToolAuthorizationEngine.js';
 import { MockAIProvider } from '../ai/MockAIProvider.js';
 import { AgentExecutor } from '../agent/AgentExecutor.js';
+import { ConversationRegistry } from '../conversation/ConversationRegistry.js';
+import { ConversationRuntime } from '../conversation/ConversationRuntime.js';
 import type { ITool } from '../tools/ITool.js';
 
 /**
@@ -65,6 +67,8 @@ export interface CLIConfig {
   readonly fileSystem: IFileSystem;
   /** The event bus for lifecycle events. */
   readonly eventBus: IEventBus;
+  /** The conversation runtime for advisor workspace management. */
+  readonly conversationRuntime: ConversationRuntime;
   /** The logger for structured logging. */
   readonly logger: ILogger;
   /** The DI container for resolving additional services. */
@@ -157,6 +161,10 @@ export function createCLIConfig(options: {
     toolExecutor,
   });
 
+  // 11. Create the conversation runtime
+  const conversationRegistry = new ConversationRegistry({ eventBus });
+  const conversationRuntime = new ConversationRuntime({ registry: conversationRegistry });
+
   return {
     aiProvider: resolvedAIProvider,
     promptEngine,
@@ -171,6 +179,7 @@ export function createCLIConfig(options: {
     workspace,
     fileSystem,
     eventBus,
+    conversationRuntime,
     logger,
     container,
   };

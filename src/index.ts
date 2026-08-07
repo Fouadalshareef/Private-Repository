@@ -14,6 +14,7 @@ export * from './language/index.js';
 export * from './ai/index.js';
 export * from './prompt/index.js';
 export * from './context/index.js';
+export * from './conversation/index.js';
 export * from './agent/index.js';
 export * from './tools/index.js';
 export * from './cli/index.js';

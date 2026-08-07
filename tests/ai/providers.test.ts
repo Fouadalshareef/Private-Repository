@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { AIProviderFactory, type AIProviderFactoryConfig } from '../../src/ai/AIProviderFactory.js';
+import { describe, it, expect } from 'vitest';
+import { AIProviderFactory } from '../../src/ai/AIProviderFactory.js';
 import { AIProviderType } from '../../src/ai/AIProviderType.js';
 import { ProviderHealthStatus } from '../../src/ai/ProviderHealthStatus.js';
 import { MockProvider } from '../../src/ai/providers/MockProvider.js';
