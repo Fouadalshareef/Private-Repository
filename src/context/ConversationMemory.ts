@@ -45,11 +45,14 @@ export class ConversationMemory implements IConversationMemory {
     if (!session) {
       return undefined;
     }
-    // Return a read-only copy
-    return {
-      ...session,
+    // Return a fully immutable copy with cloned Date objects
+    return Object.freeze({
+      sessionId: session.sessionId,
       messages: Object.freeze([...session.messages]),
-    };
+      createdAt: new Date(session.createdAt),
+      updatedAt: new Date(session.updatedAt),
+      ...(session.metadata ? { metadata: Object.freeze({ ...session.metadata }) } : {}),
+    });
   }
 
   /**
@@ -61,10 +64,10 @@ export class ConversationMemory implements IConversationMemory {
       throw new InvalidConversationSessionError(sessionId);
     }
 
-    // Create new session with added message (immutability)
+    const frozenMessage = Object.freeze({ ...message });
     const updatedSession: ConversationSession = {
       ...session,
-      messages: [...session.messages, message],
+      messages: [...session.messages, frozenMessage],
       updatedAt: new Date(),
     };
 
@@ -84,10 +87,10 @@ export class ConversationMemory implements IConversationMemory {
       throw new InvalidConversationSessionError(sessionId);
     }
 
-    // Create new session with added messages (immutability)
+    const frozenMessages = messages.map((m) => Object.freeze({ ...m }));
     const updatedSession: ConversationSession = {
       ...session,
-      messages: [...session.messages, ...messages],
+      messages: [...session.messages, ...frozenMessages],
       updatedAt: new Date(),
     };
 

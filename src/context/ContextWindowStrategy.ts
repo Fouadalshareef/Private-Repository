@@ -82,25 +82,25 @@ export class ContextWindowStrategy implements IContextWindowStrategy {
 
   /**
    * Trims messages from the beginning to fit within token budget.
+   * Keeps the most recent messages. Optimized to avoid O(n²) unshift.
    */
   private trimFromBeginning(messages: AIMessage[], maxTokens: number): AIMessage[] {
     const result: AIMessage[] = [];
     let currentTokens = 0;
 
-    // Add messages from the end (most recent first)
     for (let i = messages.length - 1; i >= 0; i--) {
       const message = messages[i];
       const messageTokens = this.estimateTokens(message);
 
       if (currentTokens + messageTokens > maxTokens && result.length > 0) {
-        // Can't fit this message, stop here
         break;
       }
 
-      result.unshift(message);
+      result.push(message);
       currentTokens += messageTokens;
     }
 
+    result.reverse();
     return result;
   }
 }

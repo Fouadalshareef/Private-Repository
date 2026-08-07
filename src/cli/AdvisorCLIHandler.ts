@@ -84,7 +84,7 @@ export class AdvisorCLIHandler {
             id: String(advisor.id),
             name: advisor.profile.name,
             specialty: advisor.profile.specialty,
-            role: advisor.profile.metadata.role,
+            role: advisor.profile.metadata.role ?? '',
           })
         : undefined,
       matchedBy: routingResult.matchedBy,

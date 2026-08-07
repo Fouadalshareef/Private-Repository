@@ -136,13 +136,13 @@ export class PromptEngine implements IPromptEngine {
    */
   private renderPromptContent(prompt: string | IPromptTemplate, variables: Readonly<Record<string, unknown>>): string {
     if (typeof prompt === 'string') {
-      return this.render(prompt, { variables, strict: false }).content;
+      return this.render(prompt, { variables, strict: true }).content;
     }
 
     // Check if template is registered
     const registeredTemplate = this.templates.get(prompt.id);
     const templateToUse = registeredTemplate ?? prompt;
 
-    return this.render(templateToUse, { variables, strict: false }).content;
+    return this.render(templateToUse, { variables, strict: true }).content;
   }
 }

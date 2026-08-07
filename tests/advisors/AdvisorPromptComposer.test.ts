@@ -3,6 +3,7 @@ import { AdvisorPromptComposer } from '../../src/advisors/AdvisorPromptComposer.
 import { AdvisorCatalog } from '../../src/advisors/AdvisorCatalog.js';
 import { AdvisorRoles, createAdvisorId } from '../../src/advisors/index.js';
 import type { AdvisorComposeContext } from '../../src/advisors/IAdvisorPromptComposer.js';
+import type { IAdvisor } from '../../src/advisors/IAdvisor.js';
 import { MessageRole } from '../../src/ai/AIMessage.js';
 import type { IPromptEngine } from '../../src/prompt/IPromptEngine.js';
 
@@ -170,8 +171,7 @@ describe('AdvisorPromptComposer', () => {
         userInput: 'Test input',
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(composer.validate(null as any, context)).toBe(false);
+      expect(composer.validate(null as unknown as IAdvisor, context)).toBe(false);
     });
 
     it('should reject advisor without systemPrompt', () => {
@@ -187,8 +187,7 @@ describe('AdvisorPromptComposer', () => {
         userInput: 'Test input',
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(composer.validate(invalidAdvisor as any, context)).toBe(false);
+      expect(composer.validate(invalidAdvisor as unknown as IAdvisor, context)).toBe(false);
     });
 
     it('should reject empty userInput', () => {
@@ -212,8 +211,7 @@ describe('AdvisorPromptComposer', () => {
     it('should reject null context', () => {
       const advisor = catalog.get(createAdvisorId(AdvisorRoles.SOFTWARE_ENGINEER))!;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(composer.validate(advisor, null as any)).toBe(false);
+      expect(composer.validate(advisor, null as unknown as AdvisorComposeContext)).toBe(false);
     });
   });
 
