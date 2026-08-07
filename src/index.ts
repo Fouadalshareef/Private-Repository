@@ -15,9 +15,11 @@ export * from './ai/index.js';
 export * from './prompt/index.js';
 export * from './context/index.js';
 export * from './conversation/index.js';
-export * from './memory/index.js';
-export * from './storage/index.js';
-export * from './agent/index.js';
+export { deepFreeze } from './agent/types.js';
+export * from './agent/types.js';
+export * from './agent/base-agent.js';
+export * from './agent/agent-runtime.js';
+export * from './agent/agent-context.js';
 export * from './tools/index.js';
 export * from './cli/index.js';
 
