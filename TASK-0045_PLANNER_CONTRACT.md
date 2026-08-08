@@ -4,7 +4,7 @@
 
 This document defines the authoritative Planner contract implemented during TASK-0045. It records the interface between the Planner subsystem and the AgentRuntime, and the internal data model used to represent plans.
 
-The Planner is a **replaceable subsystem**. AgentRuntime depends on the Planner only through an explicit interface (`Planner`), never through concrete implementation details.
+The Planner is a **replaceable subsystem**. AgentRuntime depends on the Planner through the explicit `Planner` interface for planning operations (`planTask`, `validateTaskTree`, `getNodeById`, `updateNodeStatus`). For task-tree execution, `AgentRuntime` uses the concrete `TaskTreeManager` helper directly to perform dependency-aware traversal and status updates. This is an intentional implementation detail: the execution path is owned by `AgentRuntime`, while the Planner owns planning and tree management.
 
 ---
 
@@ -167,7 +167,7 @@ A deterministic, unit-testable implementation of `Planner`.
 
 ### planTask
 
-Produces a **single root node** task tree from a goal. This is a deterministic baseline that preserves extensibility toward multi-node planning. Throws `PlanningError` for an empty goal.
+Produces a **single root node** task tree from a goal. The task-tree **structure** is deterministic (a single root node with the trimmed goal as its description), but the runtime node ID uses `Date.now()` and is therefore **non-deterministic**. Throws `PlanningError` for an empty goal.
 
 ### executePlan
 
@@ -177,11 +177,11 @@ Executes a task tree in dependency order:
 2. Computes topological order.
 3. For each pending node:
    - Skips nodes whose dependencies are not all `Completed`.
-   - Marks a node `Blocked` if any dependency is `Failed`.
+   - Marks a node `Blocked` if any dependency is `Failed` or `Blocked`.
    - Executes the node via a provided callback.
    - Marks the node `Completed` on success, `Failed` + records error on failure.
-   - Marks all direct dependents `Blocked` on failure.
-4. Returns a `PlannerResult`.
+   - Marks all **transitive** dependents `Blocked` on failure (iterates until no further Pending node has a Failed/Blocked dependency).
+4. Returns a `PlannerResult` whose `status` is `'failed'` if any node is `Failed` or `Blocked`, otherwise `'completed'`.
 
 ---
 

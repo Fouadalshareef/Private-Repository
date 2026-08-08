@@ -146,16 +146,37 @@ export class AgentRuntime {
     const startTime = Date.now();
     const failedTaskIds: string[] = [];
     const completedTaskIds: string[] = [];
+    const errors: string[] = [];
 
     for (const node of orderedNodes) {
+      // A node that is already failed before execution is reflected in the result.
+      if (node.status === TaskStatus.Failed) {
+        failedTaskIds.push(node.id);
+        if (node.error) {
+          errors.push(node.error);
+        }
+        continue;
+      }
+
       if (node.status !== TaskStatus.Pending) {
         continue;
       }
+
+      // Check dependencies: all must be Completed.
       const dependenciesMet = node.dependencies.every((depId: string) => {
-        const dependency = taskTree.nodes.find((n) => n.id === depId);
+        const dependency = manager.getNodeById(depId);
         return dependency?.status === TaskStatus.Completed;
       });
+
       if (!dependenciesMet) {
+        // If any dependency failed or is blocked, this node is blocked.
+        const hasFailedOrBlockedDep = node.dependencies.some((depId: string) => {
+          const dep = manager.getNodeById(depId);
+          return dep?.status === TaskStatus.Failed || dep?.status === TaskStatus.Blocked;
+        });
+        if (hasFailedOrBlockedDep) {
+          node.status = TaskStatus.Blocked;
+        }
         continue;
       }
 
@@ -164,23 +185,75 @@ export class AgentRuntime {
       }
 
       const agent = this.requireAgent(node.assignedAgent);
-      const result = await agent.execute(node.description);
-      completedTaskIds.push(node.id);
-      if (result.output !== undefined && result.output !== null) {
-        node.result = result.output;
+      node.status = TaskStatus.InProgress;
+      try {
+        const result = await agent.execute(node.description);
+        if (result.output !== undefined && result.output !== null) {
+          node.result = result.output;
+        }
+        node.status = TaskStatus.Completed;
+        completedTaskIds.push(node.id);
+      } catch (error) {
+        // Extract the original error message from the agent's lastError state.
+        const agentState = agent.getState();
+        const originalError =
+          agentState.lastError ?? (error instanceof Error ? error.message : String(error));
+
+        node.status = TaskStatus.Failed;
+        node.error = originalError;
+        failedTaskIds.push(node.id);
+        errors.push(node.error);
+
+        // Reset the agent so it can be reused for independent branches.
+        agent.reset();
+
+        // Mark all downstream dependents as blocked.
+        this.markDependentsBlocked(manager);
       }
-      node.status = TaskStatus.Completed;
     }
+
+    // A plan is only 'completed' when every node is Completed. Any Failed or
+    // Blocked node means the overall plan did not fully succeed.
+    const hasFailure = taskTree.nodes.some(
+      (n) => n.status === TaskStatus.Failed || n.status === TaskStatus.Blocked,
+    );
 
     return {
       rootId: taskTree.rootId,
-      status: failedTaskIds.length > 0 ? 'failed' : 'completed',
+      status: hasFailure ? 'failed' : 'completed',
       completedTaskIds,
       failedTaskIds,
       durationMs: Date.now() - startTime,
-      errors: [],
+      errors,
       taskTree,
     };
+  }
+
+  /**
+   * Marks all nodes that (transitively) depend on the given node as blocked.
+   *
+   * Iterates until no further Pending node has a Failed or Blocked
+   * dependency, so indirect dependents are also blocked.
+   */
+  private markDependentsBlocked(manager: TaskTreeManager): void {
+    const nodes = manager.getTree().nodes;
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const node of nodes) {
+        if (node.status !== TaskStatus.Pending) {
+          continue;
+        }
+        const hasFailedOrBlockedDep = node.dependencies.some((depId: string) => {
+          const dep = manager.getNodeById(depId);
+          return dep?.status === TaskStatus.Failed || dep?.status === TaskStatus.Blocked;
+        });
+        if (hasFailedOrBlockedDep) {
+          node.status = TaskStatus.Blocked;
+          changed = true;
+        }
+      }
+    }
   }
 
   public async executeTaskNode(taskId: string, taskTree: TaskTree): Promise<AgentStepResult> {
@@ -194,11 +267,24 @@ export class AgentRuntime {
       throw new Error(`Task node not found: ${taskId}`);
     }
 
+    // A node that is already Failed or Blocked cannot be executed.
+    if (node.status === TaskStatus.Failed || node.status === TaskStatus.Blocked) {
+      throw new Error(`Task node '${taskId}' is ${node.status} and cannot be executed`);
+    }
+
     const dependenciesMet = node.dependencies.every((depId: string) => {
       const dep = taskTree.nodes.find((n) => n.id === depId);
       return dep?.status === TaskStatus.Completed;
     });
     if (!dependenciesMet) {
+      // If any dependency failed or is blocked, this node is blocked.
+      const hasFailedOrBlockedDep = node.dependencies.some((depId: string) => {
+        const dep = taskTree.nodes.find((n) => n.id === depId);
+        return dep?.status === TaskStatus.Failed || dep?.status === TaskStatus.Blocked;
+      });
+      if (hasFailedOrBlockedDep) {
+        node.status = TaskStatus.Blocked;
+      }
       throw new Error(`Dependencies for task '${taskId}' are not all completed`);
     }
 
@@ -207,10 +293,27 @@ export class AgentRuntime {
     }
 
     const agent = this.requireAgent(node.assignedAgent);
-    const result = await agent.execute(node.description);
-    node.result = result.output;
-    node.status = TaskStatus.Completed;
-    return result;
+    node.status = TaskStatus.InProgress;
+    try {
+      const result = await agent.execute(node.description);
+      node.result = result.output;
+      node.status = TaskStatus.Completed;
+      return result;
+    } catch (error) {
+      // Extract the original error message from the agent's lastError state.
+      const agentState = agent.getState();
+      const originalError =
+        agentState.lastError ?? (error instanceof Error ? error.message : String(error));
+
+      node.status = TaskStatus.Failed;
+      node.error = originalError;
+
+      // Reset the agent so it can be reused.
+      agent.reset();
+
+      // Re-throw the original error.
+      throw new Error(originalError);
+    }
   }
 
   private publish(type: string, payload: unknown): void {

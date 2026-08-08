@@ -4,3 +4,17 @@ dist/
 .env.local
 .DS_Store
 coverage/
+
+# Diagnostic output files
+tsc-errors.txt
+tsc-fix-output.txt
+lint-fix-output.txt
+test-fix-output.txt
+build-fix-output.txt
+tsc-check.txt
+lint-check.txt
+test-check.txt
+build-check.txt
+vitest-dot.txt
+vitest-report.json
+HEAD_*.ts

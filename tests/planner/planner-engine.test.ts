@@ -154,7 +154,74 @@ describe('PlannerEngine', () => {
     });
 
     expect(executed).toEqual([]);
-    expect(result.status).toBe('completed');
+    expect(result.status).toBe('failed');
+    expect(result.failedTaskIds).toEqual(['a']);
     expect(nodeB.status).toBe(TaskStatus.Blocked);
+  });
+
+  it('blocks transitive dependents when a node fails', async () => {
+    const planner = new PlannerEngine();
+    const nodeA = makeNode('a', 'Task A');
+    const nodeB = makeNode('b', 'Task B', ['a']);
+    const nodeC = makeNode('c', 'Task C', ['b']);
+    const tree = new TaskTree('a', [nodeA, nodeB, nodeC]);
+
+    const result = await planner.executePlan(tree, async (node) => {
+      if (node.id === 'a') {
+        throw new Error('Task A failed');
+      }
+      return `output-${node.id}`;
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.completedTaskIds).toEqual([]);
+    expect(result.failedTaskIds).toEqual(['a']);
+    expect(nodeA.status).toBe(TaskStatus.Failed);
+    expect(nodeB.status).toBe(TaskStatus.Blocked);
+    expect(nodeC.status).toBe(TaskStatus.Blocked);
+  });
+
+  it('does not execute a node with a blocked dependency', async () => {
+    const planner = new PlannerEngine();
+    const nodeA = makeNode('a', 'Task A');
+    const nodeB = makeNode('b', 'Task B', ['a']);
+    const nodeC = makeNode('c', 'Task C', ['b']);
+    const tree = new TaskTree('a', [nodeA, nodeB, nodeC]);
+
+    // Mark A as failed before execution
+    nodeA.status = TaskStatus.Failed;
+
+    const executed: string[] = [];
+    const result = await planner.executePlan(tree, async (node) => {
+      executed.push(node.id);
+      return `output-${node.id}`;
+    });
+
+    expect(executed).toEqual([]);
+    expect(result.status).toBe('failed');
+    expect(nodeB.status).toBe(TaskStatus.Blocked);
+    expect(nodeC.status).toBe(TaskStatus.Blocked);
+  });
+
+  it('continues independent branches when one branch fails', async () => {
+    const planner = new PlannerEngine();
+    const nodeA = makeNode('a', 'Task A');
+    const nodeB = makeNode('b', 'Task B', ['a']);
+    const nodeC = makeNode('c', 'Task C');
+    const tree = new TaskTree('a', [nodeA, nodeB, nodeC]);
+
+    const result = await planner.executePlan(tree, async (node) => {
+      if (node.id === 'a') {
+        throw new Error('Task A failed');
+      }
+      return `output-${node.id}`;
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.completedTaskIds).toEqual(['c']);
+    expect(result.failedTaskIds).toEqual(['a']);
+    expect(nodeA.status).toBe(TaskStatus.Failed);
+    expect(nodeB.status).toBe(TaskStatus.Blocked);
+    expect(nodeC.status).toBe(TaskStatus.Completed);
   });
 });

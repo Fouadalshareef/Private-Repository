@@ -105,6 +105,15 @@ export class PlannerEngine implements Planner {
     const errors: string[] = [];
 
     for (const node of orderedNodes) {
+      // A node that is already failed before execution is reflected in the result.
+      if (node.status === TaskStatus.Failed) {
+        failedTaskIds.push(node.id);
+        if (node.error) {
+          errors.push(node.error);
+        }
+        continue;
+      }
+
       if (node.status !== TaskStatus.Pending) {
         continue;
       }
@@ -116,12 +125,12 @@ export class PlannerEngine implements Planner {
       });
 
       if (!dependenciesMet) {
-        // If any dependency failed, this node is blocked.
-        const hasFailedDep = node.dependencies.some((depId) => {
+        // If any dependency failed or is blocked, this node is blocked.
+        const hasFailedOrBlockedDep = node.dependencies.some((depId) => {
           const dep = manager.getNodeById(depId);
-          return dep?.status === TaskStatus.Failed;
+          return dep?.status === TaskStatus.Failed || dep?.status === TaskStatus.Blocked;
         });
-        if (hasFailedDep) {
+        if (hasFailedOrBlockedDep) {
           node.status = TaskStatus.Blocked;
         }
         continue;
@@ -139,13 +148,19 @@ export class PlannerEngine implements Planner {
         failedTaskIds.push(node.id);
         errors.push(node.error);
         // Mark all downstream dependents as blocked.
-        this.markDependentsBlocked(manager, node.id);
+        this.markDependentsBlocked(manager);
       }
     }
 
+    // A plan is only 'completed' when every node is Completed. Any Failed or
+    // Blocked node means the overall plan did not fully succeed.
+    const hasFailure = tree.nodes.some(
+      (n) => n.status === TaskStatus.Failed || n.status === TaskStatus.Blocked,
+    );
+
     return {
       rootId: tree.rootId,
-      status: failedTaskIds.length > 0 ? 'failed' : 'completed',
+      status: hasFailure ? 'failed' : 'completed',
       completedTaskIds,
       failedTaskIds,
       durationMs: Date.now() - startTime,
@@ -156,11 +171,27 @@ export class PlannerEngine implements Planner {
 
   /**
    * Marks all nodes that (transitively) depend on the given node as blocked.
+   *
+   * Iterates until no further Pending node has a Failed or Blocked
+   * dependency, so indirect dependents are also blocked.
    */
-  private markDependentsBlocked(manager: TaskTreeManager, failedNodeId: string): void {
-    for (const node of manager.getTree().nodes) {
-      if (node.status === TaskStatus.Pending && node.dependencies.includes(failedNodeId)) {
-        node.status = TaskStatus.Blocked;
+  private markDependentsBlocked(manager: TaskTreeManager): void {
+    const nodes = manager.getTree().nodes;
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const node of nodes) {
+        if (node.status !== TaskStatus.Pending) {
+          continue;
+        }
+        const hasFailedOrBlockedDep = node.dependencies.some((depId) => {
+          const dep = manager.getNodeById(depId);
+          return dep?.status === TaskStatus.Failed || dep?.status === TaskStatus.Blocked;
+        });
+        if (hasFailedOrBlockedDep) {
+          node.status = TaskStatus.Blocked;
+          changed = true;
+        }
       }
     }
   }

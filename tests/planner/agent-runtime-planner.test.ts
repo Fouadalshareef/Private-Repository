@@ -126,4 +126,124 @@ describe('AgentRuntime Planner Integration', () => {
     runtime.setPlanner(planner);
     expect(runtime.getPlanner()).toBe(planner);
   });
+
+  it('marks a node as failed and blocks dependents when an agent throws', async () => {
+    const runtime = new AgentRuntime({ planner: new PlannerEngine() });
+    runtime.createAgent({
+      agentId: 'agent-1',
+      handler: async (input) => {
+        if (String(input) === 'Task B') {
+          throw new Error('Task B failed');
+        }
+        return { output: `done:${String(input)}` };
+      },
+    });
+
+    const nodeA = makeNode('a', 'Task A', [], 'agent-1');
+    const nodeB = makeNode('b', 'Task B', ['a'], 'agent-1');
+    const nodeC = makeNode('c', 'Task C', ['b'], 'agent-1');
+    const tree = new TaskTree('a', [nodeA, nodeB, nodeC]);
+
+    const result = await runtime.executePlan(tree);
+
+    expect(result.status).toBe('failed');
+    expect(result.completedTaskIds).toEqual(['a']);
+    expect(result.failedTaskIds).toEqual(['b']);
+    expect(result.errors).toEqual(['Task B failed']);
+    expect(nodeA.status).toBe(TaskStatus.Completed);
+    expect(nodeB.status).toBe(TaskStatus.Failed);
+    expect(nodeB.error).toBe('Task B failed');
+    expect(nodeC.status).toBe(TaskStatus.Blocked);
+  });
+
+  it('does not execute a node whose dependency is blocked', async () => {
+    const runtime = new AgentRuntime({ planner: new PlannerEngine() });
+    const executed: string[] = [];
+    runtime.createAgent({
+      agentId: 'agent-1',
+      handler: async (input) => {
+        executed.push(String(input));
+        if (String(input) === 'Task A') {
+          throw new Error('Task A failed');
+        }
+        return { output: `done:${String(input)}` };
+      },
+    });
+
+    const nodeA = makeNode('a', 'Task A', [], 'agent-1');
+    const nodeB = makeNode('b', 'Task B', ['a'], 'agent-1');
+    const tree = new TaskTree('a', [nodeA, nodeB]);
+
+    const result = await runtime.executePlan(tree);
+
+    expect(executed).toEqual(['Task A']);
+    expect(result.status).toBe('failed');
+    expect(result.failedTaskIds).toEqual(['a']);
+    expect(nodeA.status).toBe(TaskStatus.Failed);
+    expect(nodeB.status).toBe(TaskStatus.Blocked);
+  });
+
+  it('continues independent branches when one branch fails', async () => {
+    const runtime = new AgentRuntime({ planner: new PlannerEngine() });
+    runtime.createAgent({
+      agentId: 'agent-1',
+      handler: async (input) => {
+        if (String(input) === 'Task A') {
+          throw new Error('Task A failed');
+        }
+        return { output: `done:${String(input)}` };
+      },
+    });
+
+    const nodeA = makeNode('a', 'Task A', [], 'agent-1');
+    const nodeB = makeNode('b', 'Task B', ['a'], 'agent-1');
+    const nodeC = makeNode('c', 'Task C', [], 'agent-1');
+    const tree = new TaskTree('a', [nodeA, nodeB, nodeC]);
+
+    const result = await runtime.executePlan(tree);
+
+    expect(result.status).toBe('failed');
+    expect(result.completedTaskIds).toEqual(['c']);
+    expect(result.failedTaskIds).toEqual(['a']);
+    expect(nodeA.status).toBe(TaskStatus.Failed);
+    expect(nodeB.status).toBe(TaskStatus.Blocked);
+    expect(nodeC.status).toBe(TaskStatus.Completed);
+  });
+
+  it('marks a node as failed and re-throws when executeTaskNode agent throws', async () => {
+    const runtime = new AgentRuntime({ planner: new PlannerEngine() });
+    runtime.createAgent({
+      agentId: 'agent-1',
+      handler: async () => {
+        throw new Error('Agent execution failed');
+      },
+    });
+
+    const nodeA = makeNode('a', 'Task A', [], 'agent-1');
+    const tree = new TaskTree('a', [nodeA]);
+
+    await expect(runtime.executeTaskNode('a', tree)).rejects.toThrow('Agent execution failed');
+    expect(nodeA.status).toBe(TaskStatus.Failed);
+    expect(nodeA.error).toBe('Agent execution failed');
+  });
+
+  it('blocks a node when executeTaskNode has a failed dependency', async () => {
+    const runtime = new AgentRuntime({ planner: new PlannerEngine() });
+    runtime.createAgent({
+      agentId: 'agent-1',
+      handler: async () => ({ output: 'done' }),
+    });
+
+    const nodeA = makeNode('a', 'Task A', [], 'agent-1');
+    const nodeB = makeNode('b', 'Task B', ['a'], 'agent-1');
+    const tree = new TaskTree('a', [nodeA, nodeB]);
+
+    // Mark A as failed before execution
+    nodeA.status = TaskStatus.Failed;
+
+    await expect(runtime.executeTaskNode('b', tree)).rejects.toThrow(
+      /Dependencies for task 'b' are not all completed/
+    );
+    expect(nodeB.status).toBe(TaskStatus.Blocked);
+  });
 });
