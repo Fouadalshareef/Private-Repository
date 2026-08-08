@@ -1,9 +1,6 @@
 import type { IEventBus } from '../events/IEventBus.js';
 import type { MemoryBundle } from '../memory/types.js';
 import { BaseAgent } from './base-agent.js';
-import { PlannerEngine } from '../planner/planner-engine.js';
-import { TaskTree, TaskStatus } from '../planner/task-tree.js';
-import type { TaskNode } from '../planner/types.js';
 import {
   type AgentRuntimeConfig,
   type BaseAgentConfig,
@@ -14,6 +11,9 @@ import {
   AgentRuntimeStatus,
   deepFreeze,
 } from './types.js';
+import { TaskStatus, PlannerNotAttachedError } from '../planner/types.js';
+import type { Planner, TaskTree, PlannerResult } from '../planner/types.js';
+import { TaskTreeManager } from '../planner/task-tree.js';
 
 /**
  * Unified runtime managing agent lifecycle, state isolation, and memory binding.
@@ -26,12 +26,13 @@ export class AgentRuntime {
   private readonly agents: Map<string, BaseAgent>;
   private readonly memory: MemoryBundle | undefined;
   private readonly eventBus: IEventBus | undefined;
-  private _planner: PlannerEngine | undefined;
+  private planner: Planner | undefined;
 
   constructor(config: AgentRuntimeConfig = {}) {
     this.agents = new Map();
     this.memory = config.memory;
     this.eventBus = config.eventBus;
+    this.planner = config.planner;
   }
 
   /**
@@ -88,25 +89,7 @@ export class AgentRuntime {
    */
   public async executeAgent(agentId: string, input: unknown): Promise<AgentStepResult> {
     const agent = this.requireAgent(agentId);
-    
-    // If this is a planner task, handle differently
-    const config = { memory: this.memory };
-    const planner = this._planner;
-    if (planner && this._agentIsPlanning(agentId)) {
-      // This is a planner task - handle specially
-      const result = await planner.planTask(input);
-      return {
-        sessionId: agent.getAgentId(),
-        response: JSON.stringify({
-          requestId: input.requestId,
-          success: true,
-          taskTree: result.taskTree,
-        }),
-        streamed: false,
-      };
-    }
 
-    // Original behavior
     this.publish('agent.execution.started', { agentId });
     try {
       const result = await agent.execute(input);
@@ -134,87 +117,100 @@ export class AgentRuntime {
     return this.memory;
   }
 
-  /**
-   * Returns the planner engine for task decomposition.
-   */
-  public getPlanner(): PlannerEngine | undefined {
-    return this._planner;
+  public setPlanner(planner: Planner): void {
+    this.planner = planner;
   }
 
-  /**
-   * Sets the planner engine for task decomposition.
-   */
-  public setPlanner(planner: PlannerEngine | undefined): void {
-    this._planner = planner;
+  public getPlanner(): Planner | undefined {
+    return this.planner;
   }
 
-  /**
-   * Plans a task from natural language input.
-   */
-  public async planTask(input: string): Promise<TaskTree | null> {
-    const planner = this._planner;
-    if (!planner) {
-      return null;
+  public async planTask(input: string): Promise<TaskTree> {
+    if (!this.planner) {
+      throw new PlannerNotAttachedError();
     }
-    return planner.planTask(input);
+    const taskTree = await this.planner.planTask(input);
+    this.eventBus?.publish({ type: 'planner.tasktree.created', timestamp: Date.now(), payload: { taskTree } });
+    return taskTree;
   }
 
-  /**
-   * Executes a plan from a task tree with interactive approval.
-   */
-  public async executePlan(tree: TaskTree): Promise<{ result: boolean }> {
-    const nodes = tree.getNodes();
-    for (const node of nodes) {
-      if (node.status === TaskStatus.Pending) {
-        await this.publish('plan.node', node);
-        // In production, this would prompt the user for approval
-        // For now, assume auto-approve
-        this.updateNodeStatus(node.id, TaskStatus.InProgress);
+  public async executePlan(taskTree: TaskTree): Promise<PlannerResult> {
+    if (!this.planner) {
+      throw new PlannerNotAttachedError();
+    }
+
+    this.planner.validateTaskTree(taskTree);
+    const manager = new TaskTreeManager(taskTree);
+    const orderedNodes = manager.topologicalOrder();
+
+    const startTime = Date.now();
+    const failedTaskIds: string[] = [];
+    const completedTaskIds: string[] = [];
+
+    for (const node of orderedNodes) {
+      if (node.status !== TaskStatus.Pending) {
+        continue;
       }
+      const dependenciesMet = node.dependencies.every((depId: string) => {
+        const dependency = taskTree.nodes.find((n) => n.id === depId);
+        return dependency?.status === TaskStatus.Completed;
+      });
+      if (!dependenciesMet) {
+        continue;
+      }
+
+      if (!node.assignedAgent) {
+        throw new Error(`Task node '${node.id}' is missing an assigned agent`);
+      }
+
+      const agent = this.requireAgent(node.assignedAgent);
+      const result = await agent.execute(node.description);
+      completedTaskIds.push(node.id);
+      if (result.output !== undefined && result.output !== null) {
+        node.result = result.output;
+      }
+      node.status = TaskStatus.Completed;
     }
-    return { result: true };
+
+    return {
+      rootId: taskTree.rootId,
+      status: failedTaskIds.length > 0 ? 'failed' : 'completed',
+      completedTaskIds,
+      failedTaskIds,
+      durationMs: Date.now() - startTime,
+      errors: [],
+      taskTree,
+    };
   }
 
-  /**
-   * Executes a node of a task tree.
-   */
-  public async executeTaskNode(nodeId: string, input: unknown): Promise<AgentStepResult> {
-    const planner = this._planner;
-    if (!planner) {
-      throw new Error('No planner configured');
+  public async executeTaskNode(taskId: string, taskTree: TaskTree): Promise<AgentStepResult> {
+    if (!this.planner) {
+      throw new PlannerNotAttachedError();
     }
-    const node = planner.getNodeById(nodeId);
+
+    this.planner.validateTaskTree(taskTree);
+    const node = taskTree.nodes.find((n) => n.id === taskId);
     if (!node) {
-      throw new AgentRuntimeNotFoundError(nodeId);
+      throw new Error(`Task node not found: ${taskId}`);
     }
 
-    // Mark node as in progress
-    this.updateNodeStatus(nodeId, TaskStatus.InProgress);
-
-    try {
-      const result = await this._executeAgentTask(node, input);
-      this.updateNodeStatus(nodeId, TaskStatus.Completed);
-      return result;
-    } catch (err) {
-      this.updateNodeStatus(nodeId, TaskStatus.Failed);
-      throw err;
+    const dependenciesMet = node.dependencies.every((depId: string) => {
+      const dep = taskTree.nodes.find((n) => n.id === depId);
+      return dep?.status === TaskStatus.Completed;
+    });
+    if (!dependenciesMet) {
+      throw new Error(`Dependencies for task '${taskId}' are not all completed`);
     }
-  }
 
-  private updateNodeStatus(nodeId: string, status: TaskStatus): void {
-    // Update node status in the planner
-    const planner = this._planner;
-    if (planner) {
-      planner.updateNodeStatus(nodeId, status);
+    if (!node.assignedAgent) {
+      throw new Error(`Task node '${node.id}' is missing an assigned agent`);
     }
-  }
 
-  private _executeAgentTask(node: TaskNode, input: unknown): Promise<AgentStepResult> {
-    const agent = this.agents.get(node.assignedAgent);
-    if (!agent) {
-      throw new AgentRuntimeNotFoundError(node.assignedAgent ?? 'unknown');
-    }
-    return agent.execute(input);
+    const agent = this.requireAgent(node.assignedAgent);
+    const result = await agent.execute(node.description);
+    node.result = result.output;
+    node.status = TaskStatus.Completed;
+    return result;
   }
 
   private publish(type: string, payload: unknown): void {

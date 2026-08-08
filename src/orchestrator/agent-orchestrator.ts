@@ -1,31 +1,21 @@
 import { MessageBus } from './message-bus.js';
+import type { Event } from '../events/EventTypes.js';
 import type { IEventBus } from '../events/IEventBus.js';
 import type { AgentRuntime } from '../agent/agent-runtime.js';
 import type { MemoryBundle } from '../memory/types.js';
 import type { IToolRegistry } from '../tools/IToolRegistry.js';
 
-import type {
+import {
   AgentRole,
+  TaskStatus,
+} from './types.js';
+import type {
   RoleAssignmentConfig,
   OrchestratorConfig,
-  TaskStatus,
   OrchestrationResult,
   AgentTaskContext,
   AgentTaskResult,
 } from './types.js';
-
-const enum CommandType {
-  Chat = 'chat',
-  AgentExecute = 'agent.execute',
-  PlannerPlan = 'planner.plan',
-  OrchestratorRun = 'orchestrator.run',
-  SessionList = 'session.list',
-  SessionInfo = 'session.info',
-  SessionClear = 'session.clear',
-  AdvisorList = 'advisor.list',
-  ToolList = 'tool.list',
-  SystemStatus = 'system.status',
-}
 
 /**
  * Multi-Agent Orchestration Engine
@@ -65,9 +55,10 @@ export class AgentOrchestrator {
    * Sets up subscriptions to core events for orchestration coordination.
    */
   private setupSubscriptions(): void {
-    this.eventBus.subscribe('agent.execution.completed', (data: any) => {
-      this.messageBus.publish('agent.completed', data);
-      this.handleAgentCompletion(data);
+    this.eventBus.subscribe('agent.execution.completed', (event) => {
+      const payload = event.payload as { agentId: string; error?: string };
+      this.messageBus.publish('agent.completed', payload);
+      this.handleAgentCompletion(event);
     });
   }
 
@@ -82,7 +73,10 @@ export class AgentOrchestrator {
    * Lists all registered roles.
    */
   listRoles(): readonly RoleAssignmentConfig[] {
-    const roles = Array.from((this.messageBus as any).getAllRoles?.() ?? []);
+    const roles = Array.from(
+      (this.messageBus as unknown as { getAllRoles?: () => Iterable<RoleAssignmentConfig> })
+        .getAllRoles?.() ?? []
+    );
     return roles;
   }
 
@@ -90,7 +84,18 @@ export class AgentOrchestrator {
    * Plans a task tree from a natural language prompt.
    * Returns the task DAG with dependencies.
    */
-  async planTask(prompt: string): Promise<{ rootId: string; nodes: any[] }> {
+  async planTask(prompt: string): Promise<{
+    rootId: string;
+    nodes: readonly {
+      id: string;
+      description: string;
+      status: TaskStatus;
+      dependencies: readonly string[];
+      assignedAgent?: string;
+      result?: unknown;
+      error?: string;
+    }[];
+  }> {
     const rootId = `task-${Date.now()}`;
 
     // Create initial task node
@@ -106,10 +111,10 @@ export class AgentOrchestrator {
           result: undefined,
           error: undefined,
         },
-      ],
+      ] as const,
     };
 
-    this.eventBus.publish('planner.tasktree.created', { taskTree });
+    this.eventBus.publish({ type: 'planner.tasktree.created', timestamp: Date.now(), payload: { taskTree } });
     return taskTree;
   }
 
@@ -123,20 +128,20 @@ export class AgentOrchestrator {
   }): Promise<OrchestrationResult> {
     const workflowId = `workflow-${Date.now()}`;
 
-    this.eventBus.publish('orchestrator.started', {
+    this.eventBus.publish({ type: 'orchestrator.started', timestamp: Date.now(), payload: {
       workflowId,
       workflowName: config.workflowName,
       agents: Array.from(config.agents),
-    });
+    } });
 
     try {
       const result = await this.executeWorkflow(workflowId, config);
 
       this.activeWorkflows.set(workflowId, result);
-      this.eventBus.publish('orchestrator.completed', {
+      this.eventBus.publish({ type: 'orchestrator.completed', timestamp: Date.now(), payload: {
         workflowId,
         result,
-      });
+      } });
 
       return result;
     } catch (error) {
@@ -148,18 +153,14 @@ export class AgentOrchestrator {
         durationMs: Date.now() - parseInt(workflowId.split('-')[1] || '0'),
       };
 
-      this.eventBus.publish('orchestrator.failed', {
+      this.eventBus.publish({ type: 'orchestrator.failed', timestamp: Date.now(), payload: {
         workflowId,
         error,
-      });
+      } });
 
       return failedResult;
     }
   }
-
-  /**
-   * Executes a workflow by coordinating agents sequentially.
-   */
   private async executeWorkflow(
     workflowId: string,
     config: {
@@ -173,31 +174,31 @@ export class AgentOrchestrator {
 
     // Execute role-based agent sequence
     for (const { agentId, role } of config.agents) {
-      this.eventBus.publish('orchestrator.progress', {
+      this.eventBus.publish({ type: 'orchestrator.progress', timestamp: Date.now(), payload: {
         workflowId,
         agentId,
         role,
         status: 'in_progress',
-      });
+      } });
 
       try {
         const result = await this.executeAgentTask(agentId, role, config.task);
         taskResults.push(result);
 
-        this.eventBus.publish('orchestrator.progress', {
+        this.eventBus.publish({ type: 'orchestrator.progress', timestamp: Date.now(), payload: {
           workflowId,
           agentId,
           role,
           status: 'completed',
-        });
+        } });
       } catch (error) {
-        this.eventBus.publish('orchestrator.progress', {
+        this.eventBus.publish({ type: 'orchestrator.progress', timestamp: Date.now(), payload: {
           workflowId,
           agentId,
           role,
           status: 'failed',
           error: error instanceof Error ? error.message : String(error),
-        });
+        } });
         throw error;
       }
     }
@@ -259,8 +260,9 @@ export class AgentOrchestrator {
   /**
    * Handles agent completion events.
    */
-  private handleAgentCompletion(data: any): void {
-    this.eventBus.publish('agent.lifecycle.completed', data);
+  private handleAgentCompletion(event: Event<unknown>): void {
+    const payload = event.payload as { agentId?: string; error?: string };
+    this.eventBus.publish({ type: 'agent.lifecycle.completed', timestamp: Date.now(), payload });
   }
 }
 

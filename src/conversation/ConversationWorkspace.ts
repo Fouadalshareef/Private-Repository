@@ -7,12 +7,13 @@ import type { ConversationSnapshot } from './ConversationSnapshot.js';
 import type { ConversationSummary } from './ConversationSummary.js';
 import type { ConversationRegistry } from './ConversationRegistry.js';
 import type { SessionSwitchedPayload, SummaryUpdatedPayload } from './ConversationEvents.js';
-import { Events as ConversationEvents } from './ConversationEvents.js';
+import { ConversationEvents } from './ConversationEvents.js';
 import { SharedNoteType } from './ConversationState.js';
 import { ConversationSessionManager } from './ConversationSessionManager.js';
 import type { MemoryBundle, MemoryRecord, MemoryNote, ProjectContext } from '../memory/types.js';
 import type { AgentRuntime } from '../agent/agent-runtime.js';
-import { Orchestrator, OrchestratorConfig } from '../orchestrator/agent-orchestrator.js';
+import { AgentOrchestrator } from '../orchestrator/agent-orchestrator.js';
+import type { OrchestratorConfig } from '../orchestrator/types.js';
 
 /**
  * Configuration for ConversationWorkspace.
@@ -36,14 +37,15 @@ export class ConversationWorkspace {
   private memory: MemoryBundle | undefined;
   private agentRuntime: AgentRuntime | undefined;
   private currentSessionId: string | undefined;
-  private orchestrator?: Orchestrator;
+  private orchestrator?: AgentOrchestrator;
 
   constructor(config: ConversationWorkspaceConfig) {
     this.registry = config.registry;
     this.eventBus = config.eventBus;
     this.workspaceId = config.workspaceId;
+    this.memory = config.memory;
     this.sessionManager = new ConversationSessionManager({ eventBus: config.eventBus });
-    this.orchestrator = new Orchestrator(config.orchestratorConfig);
+    this.orchestrator = undefined;
   }
 
   /**
@@ -292,6 +294,13 @@ export class ConversationWorkspace {
    */
    getWorkspaceId(): string {
     return this.workspaceId;
+   }
+
+   private requireMemory(): MemoryBundle {
+    if (!this.memory) {
+      throw new Error('Memory bundle not attached to this workspace');
+    }
+    return this.memory;
    }
 
    /**

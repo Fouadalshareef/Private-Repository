@@ -10,6 +10,6 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', 'docs/', 'scripts/'],
+    ignores: ['dist/', 'node_modules/', 'docs/', 'scripts/', 'HEAD_*.ts', 'tsc-errors.txt', 'tsc-check.txt', 'lint-check.txt', 'vitest-dot.txt', 'vitest-report.json'],
   }
 );

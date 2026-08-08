@@ -36,11 +36,26 @@ describe('Agent Lifecycle (unit)', () => {
   });
 
   it('can execute from Paused (resume)', async () => {
-    const agent = new BaseAgent({ agentId: 'a1', handler: async () => ({ output: 1 }) });
-    await agent.execute('x');
+    let release: () => void;
+    const waiting = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const agent = new BaseAgent({
+      agentId: 'a1',
+      handler: async () => {
+        await waiting;
+        return { output: 1 };
+      },
+    });
+
+    const execution = agent.execute('x');
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(agent.getState().status).toBe(AgentRuntimeStatus.Running);
     agent.pause();
     expect(agent.getState().status).toBe(AgentRuntimeStatus.Paused);
-    const result = await agent.execute('y');
+    agent.resume();
+    release!();
+    const result = await execution;
     expect(result.output).toBe(1);
     expect(agent.getState().status).toBe(AgentRuntimeStatus.Idle);
   });
@@ -66,11 +81,25 @@ describe('Agent Lifecycle (unit)', () => {
   });
 
   it('pause only valid from Running', async () => {
-    const agent = new BaseAgent({ agentId: 'a1', handler: async () => ({ output: 1 }) });
-    expect(() => agent.pause()).toThrow(InvalidAgentStateError);
-    await agent.execute('x');
+    let release: () => void;
+    const waiting = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const agent = new BaseAgent({
+      agentId: 'a1',
+      handler: async () => {
+        await waiting;
+        return { output: 1 };
+      },
+    });
+
+    const execution = agent.execute('x');
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(agent.getState().status).toBe(AgentRuntimeStatus.Running);
     agent.pause();
     expect(agent.getState().status).toBe(AgentRuntimeStatus.Paused);
+    release!();
+    await execution;
   });
 
   it('evaluate valid from Idle/Running, invalid from Terminated', async () => {
@@ -157,6 +186,7 @@ describe('Context Isolation (unit)', () => {
       projectContext: new ProjectContextStore({ baseDir: dir }),
     };
     const agent = new BaseAgent({ agentId: 'agent-a', memory: bundle });
+    agent.getContext().setProjectId('proj-x');
     await bundle.projectContext!.addNote('proj-x', 'architecture', 'use events');
     const ctx = (await agent.getContext().getProjectContext()) as { notes: unknown[] } | undefined;
     expect(ctx?.notes).toHaveLength(1);

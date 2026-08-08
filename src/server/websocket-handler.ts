@@ -1,16 +1,24 @@
-import { EventEmitter } from 'events';
-import type { WebSocket } from 'ws';
+interface WebSocket {
+  send(message: string): void;
+  on(event: 'message', handler: (message: string) => void): void;
+  on(event: 'close', handler: () => void): void;
+  close(): void;
+}
 
 import {
   EventDTO,
   EventType,
 } from './dto/EventTypes.js';
-import { CommandRequestDTO, CommandResponseDTO, CommandType } from './dto/CommandTypes.js';
+import type { AgentLifecycleStateDTO, TaskTreeDTO, SessionInfoDTO, ToolInfoDTO } from './dto/PayloadTypes.js';
+import type { CommandRequestDTO } from './dto/CommandTypes.js';
+import { CommandType } from './dto/CommandTypes.js';
 import { AgentRuntime } from '../agent/agent-runtime.js';
-import { MemoryBundle } from '../memory/types.js';
+import type { MemoryBundle } from '../memory/types.js';
 import { IToolRegistry } from '../tools/IToolRegistry.js';
 import { AgentOrchestrator } from '../orchestrator/agent-orchestrator.js';
+import type { AgentRole } from '../orchestrator/types.js';
 
+import type { Event } from '../events/EventTypes.js';
 import type { IEventBus } from '../events/IEventBus.js';
 
 /**
@@ -27,6 +35,11 @@ export class WebSocketHandler {
   private readonly memory: MemoryBundle | undefined;
   private readonly toolRegistry: IToolRegistry | undefined;
   private readonly orchestrator: AgentOrchestrator | undefined;
+  private readonly sessionMemory?: {
+    listSessions?: () => unknown[];
+    getSession?: (sessionId: string) => unknown;
+    clearSession?: (sessionId: string) => void;
+  };
 
   constructor(
     config: {
@@ -45,6 +58,11 @@ export class WebSocketHandler {
     this.orchestrator = config.orchestrator;
 
     this.wss = new Map();
+    this.sessionMemory = config.memory as unknown as {
+      listSessions?: () => unknown[];
+      getSession?: (sessionId: string) => unknown;
+      clearSession?: (sessionId: string) => void;
+    };
     this.setupEventSubscriptions();
     this.initializeWebSocketServer(config.port ?? 3001);
   }
@@ -53,79 +71,99 @@ export class WebSocketHandler {
    * Sets up event subscriptions from the core to broadcast to GUI clients.
    */
   private setupEventSubscriptions(): void {
-    this.eventBus.subscribe('agent.execution.started', (data: any) => {
+    this.eventBus.subscribe('agent.execution.started', (event: Event<{ agentId: string }>) => {
       this.broadcast({
+        eventId: String(Date.now()),
+        timestamp: Date.now(),
         type: EventType.AgentStatus,
-        sessionId: data.agentId,
-        payload: { agentId: data.agentId, status: 'running' },
+        sessionId: event.payload.agentId,
+        payload: { agentId: event.payload.agentId, status: 'running' },
       });
     });
 
-    this.eventBus.subscribe('agent.execution.completed', (data: any) => {
+    this.eventBus.subscribe('agent.execution.completed', (event: Event<{ agentId: string }>) => {
       this.broadcast({
+        eventId: String(Date.now()),
+        timestamp: Date.now(),
         type: EventType.AgentStatus,
-        sessionId: data.agentId,
-        payload: { agentId: data.agentId, status: 'completed' },
+        sessionId: event.payload.agentId,
+        payload: { agentId: event.payload.agentId, status: 'completed' },
       });
     });
 
-    this.eventBus.subscribe('agent.execution.failed', (data: any) => {
+    this.eventBus.subscribe('agent.execution.failed', (event: Event<{ agentId: string; error?: string }>) => {
       this.broadcast({
+        eventId: String(Date.now()),
+        timestamp: Date.now(),
         type: EventType.AgentStatus,
-        sessionId: data.agentId,
-        payload: { agentId: data.agentId, status: 'failed', error: data.error },
+        sessionId: event.payload.agentId,
+        payload: { agentId: event.payload.agentId, status: 'failed', error: event.payload.error },
       });
     });
 
-    this.eventBus.subscribe('planner.tasktree.created', (data: any) => {
+    this.eventBus.subscribe('planner.tasktree.created', (event: Event<{ taskTree: TaskTreeDTO }>) => {
       this.broadcast({
+        eventId: String(Date.now()),
         type: EventType.TaskTreeReady,
-        payload: this.serializeTaskTree(data.taskTree),
+        timestamp: Date.now(),
+        payload: this.serializeTaskTree(event.payload.taskTree),
       });
     });
 
-    this.eventBus.subscribe('orchestrator.started', (data: any) => {
+    this.eventBus.subscribe('orchestrator.started', (event: Event<{ workflowId: string }>) => {
       this.broadcast({
+        eventId: String(Date.now()),
         type: EventType.OrchestrationStarted,
-        payload: { workflowId: data.workflowId },
+        timestamp: Date.now(),
+        payload: { workflowId: event.payload.workflowId },
       });
     });
 
-    this.eventBus.subscribe('orchestrator.progress', (data: any) => {
+    this.eventBus.subscribe('orchestrator.progress', (event: Event<unknown>) => {
       this.broadcast({
+        eventId: String(Date.now()),
         type: EventType.OrchestrationProgress,
-        payload: data,
+        timestamp: Date.now(),
+        payload: event.payload,
       });
     });
 
-    this.eventBus.subscribe('orchestrator.completed', (data: any) => {
+    this.eventBus.subscribe('orchestrator.completed', (event: Event<unknown>) => {
       this.broadcast({
+        eventId: String(Date.now()),
         type: EventType.OrchestrationProgress,
-        payload: { ...data, completed: true },
+        timestamp: Date.now(),
+        payload: { ...(event.payload as Record<string, unknown>), completed: true },
       });
     });
 
-    this.eventBus.subscribe('session.created', (data: any) => {
+    this.eventBus.subscribe('session.created', (event: Event<{ session: { id: string; advisorId: string; workspaceId: string; messages: unknown[]; status: string } }>) => {
       this.broadcast({
+        eventId: String(Date.now()),
         type: EventType.SessionUpdated,
-        payload: this.serializeSessionInfo(data.session),
+        timestamp: Date.now(),
+        payload: this.serializeSessionInfo(event.payload.session),
       });
     });
 
-    this.eventBus.subscribe('session.updated', (data: any) => {
+    this.eventBus.subscribe('session.updated', (event: Event<{ session: { id: string; advisorId: string; workspaceId: string; messages: unknown[]; status: string } }>) => {
       this.broadcast({
+        eventId: String(Date.now()),
         type: EventType.SessionUpdated,
-        payload: this.serializeSessionInfo(data.session),
+        timestamp: Date.now(),
+        payload: this.serializeSessionInfo(event.payload.session),
       });
     });
 
-    this.eventBus.subscribe('tool.executed', (data: any) => {
+    this.eventBus.subscribe('tool.executed', (event: Event<{ tool: { name: string; description: string; required: boolean }; success: boolean; result: unknown }>) => {
       this.broadcast({
+        eventId: String(Date.now()),
         type: EventType.ToolExecuted,
+        timestamp: Date.now(),
         payload: {
-          toolName: data.tool.name,
-          success: data.success,
-          result: data.result,
+          toolName: event.payload.tool.name,
+          success: event.payload.success,
+          result: event.payload.result,
         },
       });
     });
@@ -146,8 +184,15 @@ export class WebSocketHandler {
    * Broadcasts an event to all connected WebSocket clients.
    */
   private broadcast(event: EventDTO): void {
-    const json = JSON.stringify(event);
-    this.wss.forEach((ws, id) => {
+    const payload: EventDTO = {
+      eventId: String(Date.now()),
+      timestamp: event.timestamp ?? Date.now(),
+      type: event.type,
+      sessionId: event.sessionId,
+      payload: event.payload,
+    };
+    const json = JSON.stringify(payload);
+    this.wss.forEach((ws) => {
       try {
         ws.send(json);
       } catch {
@@ -159,7 +204,7 @@ export class WebSocketHandler {
   /**
    * Serializes agent lifecycle state for transport.
    */
-  private serializeAgentLifecycleState(state: any): AgentLifecycleStateDTO {
+  private serializeAgentLifecycleState(state: { agentId: string; name: string; status: string; cycleCount: number; createdAt: number; updatedAt: number; lastError?: string }): AgentLifecycleStateDTO {
     return {
       agentId: state.agentId,
       name: state.name,
@@ -174,10 +219,10 @@ export class WebSocketHandler {
   /**
    * Serializes task tree (DAG) for transport.
    */
-  private serializeTaskTree(tree: any): TaskTreeDTO {
+  private serializeTaskTree(tree: TaskTreeDTO): TaskTreeDTO {
     return {
       rootId: tree.rootId,
-      nodes: tree.nodes.map((node: any) => ({
+      nodes: tree.nodes.map((node) => ({
         id: node.id,
         description: node.description,
         status: node.status,
@@ -192,7 +237,7 @@ export class WebSocketHandler {
   /**
    * Serializes session info for transport.
    */
-  private serializeSessionInfo(session: any): SessionInfoDTO {
+  private serializeSessionInfo(session: { id: string; advisorId: string; workspaceId: string; messages: unknown[]; status: string }): SessionInfoDTO {
     return {
       sessionId: session.id,
       advisorId: session.advisorId,
@@ -205,7 +250,7 @@ export class WebSocketHandler {
   /**
    * Serializes tool info for transport.
    */
-  private serializeToolInfo(tool: any): ToolInfoDTO {
+  private serializeToolInfo(tool: { name: string; description: string; required: boolean }): ToolInfoDTO {
     return {
       name: tool.name,
       description: tool.description,
@@ -218,7 +263,7 @@ export class WebSocketHandler {
    */
   private async handleMessage(ws: WebSocket, message: string): Promise<void> {
     try {
-      const data = JSON.parse(message);
+      const data = JSON.parse(message) as CommandRequestDTO;
 
       if (!data || !data.command) {
         throw new Error('Missing command field');
@@ -228,8 +273,8 @@ export class WebSocketHandler {
         case CommandType.Chat: {
           if (this.agentRuntime && data.sessionId) {
             const result = await this.agentRuntime.executeAgent(
-              data.agentId ?? '',
-              data.args?.prompt ?? ''
+              data.args?.agentId as string ?? '',
+              (data.args?.prompt as string) ?? ''
             );
             ws.send(JSON.stringify({
               response: {
@@ -255,7 +300,7 @@ export class WebSocketHandler {
         case CommandType.AgentExecute: {
           if (this.agentRuntime) {
             const result = await this.agentRuntime.executeAgent(
-              data.args?.agentId ?? '',
+              (data.args?.agentId as string) ?? '',
               data.args?.input ?? null
             );
             ws.send(JSON.stringify({
@@ -272,7 +317,7 @@ export class WebSocketHandler {
 
         case CommandType.PlannerPlan: {
           if (this.orchestrator) {
-            const plan = this.orchestrator.planTask(data.args?.prompt ?? '');
+            const plan = await this.orchestrator.planTask((data.args?.prompt as string) ?? '');
             ws.send(JSON.stringify({
               response: {
                 requestId: data.requestId,
@@ -287,7 +332,13 @@ export class WebSocketHandler {
 
         case CommandType.OrchestratorRun: {
           if (this.orchestrator) {
-            const result = this.orchestrator.runOrchestration(data.args);
+            const result = await this.orchestrator.runOrchestration(
+              data.args as unknown as {
+                workflowName: string;
+                agents: readonly { agentId: string; role: AgentRole }[];
+                task: string;
+              }
+            );
             ws.send(JSON.stringify({
               response: {
                 requestId: data.requestId,
@@ -305,14 +356,14 @@ export class WebSocketHandler {
             response: {
               requestId: data.requestId,
               success: true,
-              data: this.memory?.listSessions(),
+              data: this.sessionMemory?.listSessions?.() ?? [],
               timestamp: Date.now(),
             },
           }));
           break;
 
         case CommandType.SessionInfo: {
-          const session = this.memory?.getSession(data.sessionId);
+          const session = this.sessionMemory?.getSession?.(data.sessionId ?? '');
           ws.send(JSON.stringify({
             response: {
               requestId: data.requestId,
@@ -325,7 +376,7 @@ export class WebSocketHandler {
         }
 
         case CommandType.SessionClear: {
-          this.memory?.clearSession(data.sessionId);
+          this.sessionMemory?.clearSession?.(data.sessionId ?? '');
           ws.send(JSON.stringify({
             response: {
               requestId: data.requestId,
@@ -380,7 +431,7 @@ export class WebSocketHandler {
     } catch (error) {
       ws.send(JSON.stringify({
         response: {
-          requestId: data.requestId,
+          requestId: undefined,
           success: false,
           error: error instanceof Error ? error.message : String(error),
           timestamp: Date.now(),

@@ -1,6 +1,7 @@
 import type { MemoryBundle } from '../memory/types.js';
 import type { IEventBus } from '../events/IEventBus.js';
 import type { AgentExecutionContext } from './agent-context.js';
+import type { Planner } from '../planner/types.js';
 
 /**
  * Execution lifecycle status of an agent within the runtime.
@@ -60,6 +61,7 @@ export interface BaseAgentConfig {
 export interface AgentRuntimeConfig {
   readonly memory?: MemoryBundle;
   readonly eventBus?: IEventBus;
+  readonly planner?: Planner;
 }
 
 /**

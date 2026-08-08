@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import type { Event, EventHandler } from '../events/EventTypes.js';
 import type { IEventBus } from '../events/IEventBus.js';
 
 /**
@@ -19,7 +20,14 @@ export class MessageBus extends EventEmitter implements IEventBus {
   /**
    * Publishes a message to all subscribers.
    */
-  public publish(event: { type: string; timestamp: number; payload: unknown }): void {
+  public publish(event: Event<unknown>): void;
+  public publish(eventType: string, payload: unknown): void;
+  public publish(eventOrType: Event<unknown> | string, payload?: unknown): void {
+    const event: Event<unknown> =
+      typeof eventOrType === 'string'
+        ? { type: eventOrType, timestamp: Date.now(), payload: payload as unknown }
+        : eventOrType;
+
     // Store in history
     this.messageHistory.push({
       type: event.type,
@@ -33,15 +41,29 @@ export class MessageBus extends EventEmitter implements IEventBus {
     }
 
     // Emit to all listeners
-    this.emit(event.type, event.payload);
+    this.emit(event.type, event);
   }
 
   /**
    * Subscribes to a specific event type.
    */
-  public subscribe(eventType: string, handler: (payload: unknown) => void): () => void {
-    this.on(eventType, handler);
-    return () => this.off(eventType, handler);
+  public subscribe<TPayload = unknown>(eventType: string, handler: EventHandler<TPayload>): void {
+    this.on(eventType, handler as (...args: unknown[]) => void);
+  }
+
+  /**
+   * Unsubscribes a handler from an event type.
+   */
+  public unsubscribe<TPayload = unknown>(eventType: string, handler: EventHandler<TPayload>): void {
+    this.off(eventType, handler as (...args: unknown[]) => void);
+  }
+
+  /**
+   * Clears all subscribers and history.
+   */
+  public clear(): void {
+    this.removeAllListeners();
+    this.clearHistory();
   }
 
   /**
