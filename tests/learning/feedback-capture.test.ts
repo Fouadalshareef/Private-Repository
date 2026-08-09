@@ -37,6 +37,7 @@ describe('FeedbackCapture', () => {
     expect(feedback.type).toBe(type);
     expect(feedback.content).toBe(content);
     expect(feedback.kind).toBe(LearningInputKind.ExplicitUserFeedback);
+    expect(feedback.scope).toBe(LearningScope.Project);
     expect(feedback.feedbackId).toMatch(/^feedback-/);
     expect(Object.isFrozen(feedback)).toBe(true);
   });

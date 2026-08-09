@@ -35,9 +35,10 @@ export class FeedbackCapture implements IFeedbackCapture {
 
   public capture(input: FeedbackCaptureInput): UserFeedback {
     const content = this.requireContent(input.content);
-    const context = this.normalizeContext(input.context, input.scope);
+    const scope = this.requireLearningScope(input.scope);
+    const context = this.normalizeContext(input.context, scope);
     const timestamp = this.normalizeTimestamp(input.timestamp);
-    const feedback = this.createFeedback(input, content, context, timestamp);
+    const feedback = this.createFeedback(input, content, scope, context, timestamp);
 
     const event: UserFeedbackReceivedEvent = {
       type: LearningEventType.UserFeedbackReceived,
@@ -52,6 +53,7 @@ export class FeedbackCapture implements IFeedbackCapture {
   private createFeedback(
     input: FeedbackCaptureInput,
     content: string,
+    scope: LearningScope,
     context: LearningContext,
     timestamp: number,
   ): UserFeedback {
@@ -61,6 +63,7 @@ export class FeedbackCapture implements IFeedbackCapture {
       content,
       source: this.requireFeedbackSource(input.source),
       kind,
+      scope,
       context,
       timestamp,
     };
@@ -102,6 +105,17 @@ export class FeedbackCapture implements IFeedbackCapture {
           throw new FeedbackValidationError('Project-scoped feedback requires a projectId.');
         }
         return Object.freeze({ sessionId, conversationId, projectId });
+      default:
+        throw new FeedbackValidationError('Feedback scope is invalid.');
+    }
+  }
+
+  private requireLearningScope(scope: LearningScope): LearningScope {
+    switch (scope) {
+      case LearningScope.Session:
+      case LearningScope.Conversation:
+      case LearningScope.Project:
+        return scope;
       default:
         throw new FeedbackValidationError('Feedback scope is invalid.');
     }

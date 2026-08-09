@@ -58,6 +58,7 @@ interface UserFeedbackBase {
   readonly source: FeedbackSource;
   readonly kind: LearningInputKind.ExplicitUserFeedback;
   readonly type: FeedbackType;
+  readonly scope: LearningScope;
   readonly context: LearningContext;
   readonly timestamp: number;
 }

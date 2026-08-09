@@ -21,6 +21,7 @@ describe('Learning contracts', () => {
       source: FeedbackSource.Cli,
       kind: LearningInputKind.ExplicitUserFeedback,
       type: FeedbackType.Instruction,
+      scope: LearningScope.Project,
       context: { sessionId: 'session-1', projectId: 'project-1' },
       timestamp: 1_725_000_000_000,
     };
@@ -36,6 +37,7 @@ describe('Learning contracts', () => {
       source: FeedbackSource.Tui,
       kind: LearningInputKind.ExplicitUserFeedback,
       type: FeedbackType.Rating,
+      scope: LearningScope.Conversation,
       rating: 5,
       context: { conversationId: 'conversation-1' },
       timestamp: 1_725_000_000_001,
@@ -84,6 +86,7 @@ describe('Learning contracts', () => {
         source: FeedbackSource.Conversation,
         kind: LearningInputKind.ExplicitUserFeedback,
         type: FeedbackType.Rejection,
+        scope: LearningScope.Project,
         context: { projectId: 'project-1' },
         timestamp: 1_725_000_000_004,
       },
