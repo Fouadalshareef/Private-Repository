@@ -86,6 +86,17 @@ export interface TextUserFeedback extends UserFeedbackBase {
  */
 export type UserFeedback = RatingUserFeedback | TextUserFeedback;
 
+/** Raw explicit-feedback input accepted by the FeedbackCapture boundary. */
+export interface FeedbackCaptureInput {
+  readonly content: string;
+  readonly source: FeedbackSource;
+  readonly type: FeedbackType;
+  readonly scope: LearningScope;
+  readonly context: LearningContext;
+  readonly timestamp?: number;
+  readonly rating?: number;
+}
+
 /** Operational information that must not be treated as UserFeedback in V1. */
 export interface SystemObservation {
   readonly observationId: string;

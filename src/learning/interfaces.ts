@@ -1,4 +1,5 @@
 import type {
+  FeedbackCaptureInput,
   LearnedRule,
   LearningContext,
   LearningResult,
@@ -6,6 +7,11 @@ import type {
   LearningSignal,
   UserFeedback,
 } from './types.js';
+
+/** Captures, validates, normalizes, and publishes explicit user feedback only. */
+export interface IFeedbackCapture {
+  capture(input: FeedbackCaptureInput): UserFeedback;
+}
 
 /** Defines future feedback normalization without prescribing LLM extraction. */
 export interface IFeedbackProcessor {
