@@ -6,3 +6,6 @@ export {
   InMemoryLearnedKnowledgeStore,
   LearnedKnowledgeStoreError,
 } from './InMemoryLearnedKnowledgeStore.js';
+export { InMemoryEvidenceStore, EvidenceStoreError } from './InMemoryEvidenceStore.js';
+export { LearningEligibilityPolicy, EligibilityPolicyError } from './LearningEligibilityPolicy.js';
+export { LearningSystem, LearningSystemError } from './LearningSystem.js';

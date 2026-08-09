@@ -119,6 +119,22 @@ export interface LearningSignal {
 }
 
 /**
+ * A transient unit of support linking a LearningSignal to a candidate rule
+ * within a specific scope. Evidence is scoped exactly like its source signal
+ * and never widens its scope. It is in-memory only and not persisted.
+ */
+export interface LearningEvidence {
+  readonly evidenceId: string;
+  readonly sourceFeedbackId: string;
+  readonly signalId: string;
+  readonly feedbackType: FeedbackType;
+  readonly candidate: string;
+  readonly scope: LearningScope;
+  readonly context: LearningContext;
+  readonly createdAt: number;
+}
+
+/**
  * Abstract reusable knowledge derived from explicit feedback.
  * Learned preferences MUST NOT grant tool authorization, permissions, or security policy.
  */
@@ -127,10 +143,14 @@ export interface LearnedRule {
   readonly rule: string;
   readonly scope: LearningScope;
   readonly context: LearningContext;
-  readonly sourceFeedbackId: string;
+readonly sourceFeedbackId: string;
   readonly createdAt: number;
-  /** Confidence is expected to be within 0..1; its calculation is deferred. */
-  readonly confidence: number;
+  /**
+   * Optional confidence within 0..1. Absence means confidence is currently
+   * undetermined / deferred (ARCH-0046-03). It is never required for rule
+   * creation and never grants authorization.
+   */
+  readonly confidence?: number;
 }
 
 /** Outcome categories for a future learning operation. */

@@ -47,7 +47,7 @@ describe('Learning contracts', () => {
     expect(rating.rating).toBe(5);
   });
 
-  it('links an abstract learned rule to feedback with scope and confidence', () => {
+  it('links an abstract learned rule to feedback with scope and optional confidence', () => {
     const rule: LearnedRule = {
       ruleId: 'rule-1',
       rule: 'Use TypeScript strict in project-1.',
@@ -55,11 +55,11 @@ describe('Learning contracts', () => {
       context: { projectId: 'project-1' },
       sourceFeedbackId: 'feedback-1',
       createdAt: 1_725_000_000_002,
-      confidence: 0.9,
     };
 
     expect(rule.scope).toBe(LearningScope.Project);
-    expect(rule.confidence).toBe(0.9);
+    // Confidence is optional/deferred; its absence means "undetermined", not 0/low/failure.
+    expect(rule.confidence).toBeUndefined();
     expect(Object.keys(rule)).not.toContain('authorization');
   });
 

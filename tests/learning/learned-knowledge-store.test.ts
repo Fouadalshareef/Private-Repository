@@ -14,7 +14,6 @@ function makeRule(overrides: Partial<LearnedRule> = {}): LearnedRule {
     context: Object.freeze({ projectId: 'project-1' }),
     sourceFeedbackId: 'feedback-1',
     createdAt: 1000,
-    confidence: 0.9,
     ...overrides,
   });
 }
@@ -31,6 +30,14 @@ describe('InMemoryLearnedKnowledgeStore', () => {
     expect(rules).toHaveLength(1);
     expect(rules[0].rule).toBe('Use TypeScript strict mode.');
     expect(rules[0].sourceFeedbackId).toBe('feedback-1');
+  });
+
+  it('stores a rule without a confidence value (confidence is optional/deferred)', async () => {
+    const store = new InMemoryLearnedKnowledgeStore();
+    const stored = await store.store(makeRule());
+
+    expect(stored.confidence).toBeUndefined();
+    expect('confidence' in stored).toBe(false);
   });
 
   it('does not widen scope or context', async () => {
@@ -101,15 +108,13 @@ describe('InMemoryLearnedKnowledgeStore', () => {
     expect(await store.remove('missing')).toBe(false);
   });
 
-  it('rejects invalid rules (empty text, bad scope, bad context, bad confidence)', async () => {
+  it('rejects invalid rules (empty text, bad scope, bad context)', async () => {
     const store = new InMemoryLearnedKnowledgeStore();
 
     await expect(store.store(makeRule({ rule: '   ' }))).rejects.toBeInstanceOf(LearnedKnowledgeStoreError);
     await expect(store.store(makeRule({ scope: 'not-a-scope' as LearningScope, context: { projectId: 'p' } })))
       .rejects.toBeInstanceOf(LearnedKnowledgeStoreError);
     await expect(store.store(makeRule({ context: {} as LearnedRule['context'] })))
-      .rejects.toBeInstanceOf(LearnedKnowledgeStoreError);
-    await expect(store.store(makeRule({ confidence: Number.NaN })))
       .rejects.toBeInstanceOf(LearnedKnowledgeStoreError);
   });
 

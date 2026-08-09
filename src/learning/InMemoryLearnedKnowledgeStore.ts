@@ -133,11 +133,18 @@ export class InMemoryLearnedKnowledgeStore implements ILearnedKnowledgeStore {
     }
     this.validateScope(rule.scope);
     this.validateContext(rule.context);
-    if (typeof rule.sourceFeedbackId !== 'string' || rule.sourceFeedbackId.length === 0) {
+if (typeof rule.sourceFeedbackId !== 'string' || rule.sourceFeedbackId.length === 0) {
       throw new LearnedKnowledgeStoreError('Learned rule requires a non-empty sourceFeedbackId.');
     }
-    if (typeof rule.confidence !== 'number' || !Number.isFinite(rule.confidence)) {
-      throw new LearnedKnowledgeStoreError('Learned rule confidence must be a finite number.');
+    // Confidence is optional per ARCH-0046-03. When present it must be a finite
+    // number within 0..1; absence means confidence is deferred/undetermined.
+    if (rule.confidence !== undefined) {
+      if (typeof rule.confidence !== 'number' || !Number.isFinite(rule.confidence)) {
+        throw new LearnedKnowledgeStoreError('Learned rule confidence must be a finite number when provided.');
+      }
+      if (rule.confidence < 0 || rule.confidence > 1) {
+        throw new LearnedKnowledgeStoreError('Learned rule confidence must be within 0..1 when provided.');
+      }
     }
   }
 

@@ -2,6 +2,7 @@ import type {
   FeedbackCaptureInput,
   LearnedRule,
   LearningContext,
+  LearningEvidence,
   LearningResult,
   LearningScope,
   LearningSignal,
@@ -30,4 +31,19 @@ export interface ILearnedKnowledgeStore {
   getRules(scope: LearningScope, context: LearningContext): Promise<readonly LearnedRule[]>;
   update(rule: LearnedRule): Promise<LearnedRule>;
   remove(ruleId: string): Promise<boolean>;
+}
+
+/**
+ * Transient, scoped storage for LearningEvidence items.
+ * Evidence is process-lifetime only and is not persisted.
+ */
+export interface IEvidenceStore {
+  /** Store a single evidence item. Returns the stored evidence. */
+  store(evidence: LearningEvidence): Promise<LearningEvidence>;
+  /** Retrieve all stored evidence items. */
+  getAll(): Promise<readonly LearningEvidence[]>;
+  /** Retrieve evidence matching a scope and context. */
+  getEvidence(scope: LearningScope, context: LearningContext): Promise<readonly LearningEvidence[]>;
+  /** Remove all evidence matching a scope and context. */
+  clear(scope: LearningScope, context: LearningContext): Promise<void>;
 }
