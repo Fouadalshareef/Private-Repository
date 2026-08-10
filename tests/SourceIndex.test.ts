@@ -6,6 +6,7 @@ import {
   SourceFileNotFoundError,
 } from '../src/source/SourceIndexError.js';
 import { SourceIndexEvents } from '../src/source/SourceIndexEvents.js';
+import { LanguageType } from '../src/language/LanguageType.js';
 import type { ISourceIndex } from '../src/source/ISourceIndex.js';
 import type { ProjectScanResult } from '../src/project/ProjectScanResult.js';
 import type { ProjectInfo } from '../src/project/ProjectInfo.js';
@@ -23,6 +24,14 @@ function createScanResult(): ProjectScanResult {
     createdAt: 1000,
     scannedAt: 2000,
   };
+
+  return createScanResultWithInfo(info);
+}
+
+/**
+ * Creates a scan result for a project with a custom project id.
+ */
+function createScanResultWithInfo(info: ProjectInfo): ProjectScanResult {
   const files: ProjectFile[] = [
     { path: 'package.json', name: 'package.json', extension: '.json', size: 10, createdAt: 1000, modifiedAt: 1000 },
     { path: 'src/index.ts', name: 'index.ts', extension: '.ts', size: 20, createdAt: 1000, modifiedAt: 1000 },
@@ -96,6 +105,37 @@ describe('SourceIndex', () => {
     expect(index.contains('README')).toBe(false);
   });
 
+  // ── entry metadata ───────────────────────────────────────────
+
+  it('should populate stable identity and structural metadata on entries', () => {
+    index.build(model);
+
+    const entry = index.getFile('src/index.ts');
+    expect(entry.id).toBe(`proj-1:file:src/index.ts`);
+    expect(entry.projectId).toBe('proj-1');
+    expect(entry.relativePath).toBe('src/index.ts');
+    expect(entry.languageHint).toBe(LanguageType.TYPESCRIPT);
+    expect(entry.createdAt).toBe(1000);
+    expect(entry.modifiedAt).toBe(1000);
+  });
+
+  it('should derive a deterministic language hint from the extension', () => {
+    index.build(model);
+
+    expect(index.getFile('package.json').languageHint).toBe(LanguageType.JSON);
+    expect(index.getFile('README').languageHint).toBe(LanguageType.UNKNOWN);
+  });
+
+  it('should produce a stable id across rebuilds', () => {
+    index.build(model);
+    const first = index.getFile('src/index.ts').id;
+
+    index.build(model);
+    const second = index.getFile('src/index.ts').id;
+
+    expect(second).toBe(first);
+  });
+
   // ── getFile ───────────────────────────────────────────────────
 
   it('should return a file entry by path', () => {
@@ -126,6 +166,26 @@ describe('SourceIndex', () => {
     entry.name = 'mutated';
 
     expect(index.getFile('src/index.ts').name).toBe('index.ts');
+  });
+
+  // ── getById ──────────────────────────────────────────────────
+
+  it('should return a file entry by stable id', () => {
+    index.build(model);
+
+    const entry = index.getById('proj-1:file:src/index.ts');
+    expect(entry.path).toBe('src/index.ts');
+    expect(entry.projectId).toBe('proj-1');
+  });
+
+  it('should throw SourceFileNotFoundError for an unknown id', () => {
+    index.build(model);
+
+    expect(() => index.getById('proj-1:missing.ts')).toThrow(SourceFileNotFoundError);
+  });
+
+  it('should throw SourceIndexNotBuiltError before build', () => {
+    expect(() => index.getById('proj-1:src/index.ts')).toThrow(SourceIndexNotBuiltError);
   });
 
   // ── getAllFiles ──────────────────────────────────────────────
@@ -164,6 +224,28 @@ describe('SourceIndex', () => {
 
   it('should throw SourceIndexNotBuiltError before build', () => {
     expect(() => index.findFilesByExtension('.ts')).toThrow(SourceIndexNotBuiltError);
+  });
+
+  // ── findByLanguage ───────────────────────────────────────────
+
+  it('should find files by language hint', () => {
+    index.build(model);
+
+    const tsFiles = index.findByLanguage(LanguageType.TYPESCRIPT);
+    expect(tsFiles).toHaveLength(2);
+    expect(tsFiles.map((e) => e.path)).toEqual(
+      expect.arrayContaining(['src/index.ts', 'src/components/Button.ts']),
+    );
+  });
+
+  it('should return empty for a language with no files', () => {
+    index.build(model);
+
+    expect(index.findByLanguage(LanguageType.PYTHON)).toEqual([]);
+  });
+
+  it('should throw SourceIndexNotBuiltError before build', () => {
+    expect(() => index.findByLanguage(LanguageType.TYPESCRIPT)).toThrow(SourceIndexNotBuiltError);
   });
 
   // ── contains ─────────────────────────────────────────────────
@@ -215,14 +297,38 @@ describe('SourceIndex', () => {
     expect(index.size()).toBe(4);
   });
 
+  // ── project isolation ────────────────────────────────────────
+
+  it('should isolate entries by project id', () => {
+    const otherInfo: ProjectInfo = {
+      projectId: 'proj-2',
+      projectName: 'Other Project',
+      rootPath: '/other',
+      createdAt: 1000,
+      scannedAt: 2000,
+    };
+    const otherModel = new ProjectModelBuilder().build(createScanResultWithInfo(otherInfo));
+
+    index.build(model);
+    const otherIndex = new SourceIndex();
+    otherIndex.build(otherModel);
+
+    expect(index.getFile('src/index.ts').projectId).toBe('proj-1');
+    expect(otherIndex.getFile('src/index.ts').projectId).toBe('proj-2');
+    expect(index.getById('proj-1:file:src/index.ts').path).toBe('src/index.ts');
+    expect(otherIndex.getById('proj-2:file:src/index.ts').path).toBe('src/index.ts');
+  });
+
   // ── interface conformance ────────────────────────────────────
 
   it('should conform to the ISourceIndex interface', () => {
     const sourceIndex: ISourceIndex = index;
     expect(sourceIndex.build).toBeTypeOf('function');
     expect(sourceIndex.getFile).toBeTypeOf('function');
+    expect(sourceIndex.getById).toBeTypeOf('function');
     expect(sourceIndex.getAllFiles).toBeTypeOf('function');
     expect(sourceIndex.findFilesByExtension).toBeTypeOf('function');
+    expect(sourceIndex.findByLanguage).toBeTypeOf('function');
     expect(sourceIndex.contains).toBeTypeOf('function');
     expect(sourceIndex.size).toBeTypeOf('function');
     expect(sourceIndex.clear).toBeTypeOf('function');
