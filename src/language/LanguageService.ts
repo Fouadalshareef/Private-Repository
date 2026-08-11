@@ -58,14 +58,16 @@ export class LanguageService implements ILanguageService {
    * @param content The source code content.
    * @param language The language type.
    * @param filePath The file path (used for symbol metadata).
+   * @param projectId The project identifier (used for deterministic symbol identity).
    * @returns An array of extracted symbols.
    */
   public parseSymbols(
     content: string,
     language: LanguageType,
     filePath: string,
+    projectId: string,
   ): SourceSymbol[] {
-    return this.parser.parseSymbols(content, language, filePath);
+    return this.parser.parseSymbols(content, language, filePath, projectId);
   }
 
   /**
@@ -77,6 +79,17 @@ export class LanguageService implements ILanguageService {
    */
   public extractImports(content: string, language: LanguageType): string[] {
     return this.parser.extractImports(content, language);
+  }
+
+  /**
+   * Extracts export specifiers from the given content.
+   *
+   * @param content The source code content.
+   * @param language The language type.
+   * @returns An array of exported symbol names.
+   */
+  public extractExports(content: string, language: LanguageType): string[] {
+    return this.parser.extractExports(content, language);
   }
 
   /**
@@ -97,7 +110,7 @@ export class LanguageService implements ILanguageService {
       }
       const content = fileSystem.readFile(entry.path);
       const language = this.detectLanguage(entry.path);
-      const symbols = this.parseSymbols(content, language, entry.path);
+      const symbols = this.parseSymbols(content, language, entry.path, entry.projectId);
       if (symbols.length > 0) {
         enriched++;
       }

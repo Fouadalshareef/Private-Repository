@@ -14,6 +14,9 @@ export const LanguageEvents = {
   /** Published when imports are extracted. */
   IMPORTS_EXTRACTED: 'language.imports.extracted',
 
+  /** Published when exports are extracted. */
+  EXPORTS_EXTRACTED: 'language.exports.extracted',
+
   /** Published when a parse error occurs. */
   PARSE_FAILED: 'language.parse.failed',
 } as const;

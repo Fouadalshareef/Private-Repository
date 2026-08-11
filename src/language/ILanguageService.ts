@@ -7,8 +7,8 @@ import type { IFileSystem } from '../filesystem/IFileSystem.js';
  * Contract for the Language Service.
  *
  * Provides lightweight code analysis, extracting symbols (classes,
- * interfaces, functions, variables, imports, exports) from file
- * contents without binding to heavyweight compiler tools.
+ * interfaces, functions, methods, types, enums, variables, imports,
+ * exports) from file contents without binding to heavyweight compiler tools.
  */
 export interface ILanguageService {
   /**
@@ -25,9 +25,10 @@ export interface ILanguageService {
    * @param content The source code content.
    * @param language The language type.
    * @param filePath The file path (used for symbol metadata).
+   * @param projectId The project identifier (used for deterministic symbol identity).
    * @returns An array of extracted symbols.
    */
-  parseSymbols(content: string, language: LanguageType, filePath: string): SourceSymbol[];
+  parseSymbols(content: string, language: LanguageType, filePath: string, projectId: string): SourceSymbol[];
 
   /**
    * Extracts import statements from the given content.
@@ -37,6 +38,15 @@ export interface ILanguageService {
    * @returns An array of import paths.
    */
   extractImports(content: string, language: LanguageType): string[];
+
+  /**
+   * Extracts export specifiers from the given content.
+   *
+   * @param content The source code content.
+   * @param language The language type.
+   * @returns An array of exported symbol names.
+   */
+  extractExports(content: string, language: LanguageType): string[];
 
   /**
    * Enriches a source index by reading file contents through the

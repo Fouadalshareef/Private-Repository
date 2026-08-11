@@ -69,7 +69,7 @@ describe('LanguageService', () => {
       class AnotherClass {}
       export default class DefaultClass {}
     `;
-    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'test.ts');
+    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'test.ts', 'proj-1');
     const classes = symbols.filter((s) => s.kind === 'class');
     expect(classes.map((s) => s.name)).toEqual(expect.arrayContaining(['MyClass', 'AnotherClass', 'DefaultClass']));
   });
@@ -79,7 +79,7 @@ describe('LanguageService', () => {
       export interface MyInterface {}
       interface AnotherInterface {}
     `;
-    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'test.ts');
+    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'test.ts', 'proj-1');
     const interfaces = symbols.filter((s) => s.kind === 'interface');
     expect(interfaces.map((s) => s.name)).toEqual(expect.arrayContaining(['MyInterface', 'AnotherInterface']));
   });
@@ -90,7 +90,7 @@ describe('LanguageService', () => {
       function anotherFunction() {}
       async function asyncFunction() {}
     `;
-    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'test.ts');
+    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'test.ts', 'proj-1');
     const functions = symbols.filter((s) => s.kind === 'function');
     expect(functions.map((s) => s.name)).toEqual(expect.arrayContaining(['myFunction', 'anotherFunction', 'asyncFunction']));
   });
@@ -100,7 +100,7 @@ describe('LanguageService', () => {
       const myArrow = () => {};
       export const anotherArrow = async () => {};
     `;
-    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'test.ts');
+    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'test.ts', 'proj-1');
     const functions = symbols.filter((s) => s.kind === 'function');
     expect(functions.map((s) => s.name)).toEqual(expect.arrayContaining(['myArrow', 'anotherArrow']));
   });
@@ -110,7 +110,7 @@ describe('LanguageService', () => {
       enum MyEnum {}
       const enum AnotherEnum {}
     `;
-    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'test.ts');
+    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'test.ts', 'proj-1');
     const enums = symbols.filter((s) => s.kind === 'enum');
     expect(enums.map((s) => s.name)).toEqual(expect.arrayContaining(['MyEnum', 'AnotherEnum']));
   });
@@ -120,9 +120,20 @@ describe('LanguageService', () => {
       type MyType = string;
       export type AnotherType = number;
     `;
-    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'test.ts');
+    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'test.ts', 'proj-1');
     const types = symbols.filter((s) => s.kind === 'type');
     expect(types.map((s) => s.name)).toEqual(expect.arrayContaining(['MyType', 'AnotherType']));
+  });
+
+  it('should parse variables from TypeScript', () => {
+    const content = `
+      const myVar = 1;
+      export let anotherVar = 2;
+      var oldVar = 3;
+    `;
+    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'test.ts', 'proj-1');
+    const variables = symbols.filter((s) => s.kind === 'variable');
+    expect(variables.map((s) => s.name)).toEqual(expect.arrayContaining(['myVar', 'anotherVar', 'oldVar']));
   });
 
   it('should parse classes from Python', () => {
@@ -132,7 +143,7 @@ describe('LanguageService', () => {
       class AnotherClass:
           pass
     `;
-    const symbols = service.parseSymbols(content, LanguageType.PYTHON, 'test.py');
+    const symbols = service.parseSymbols(content, LanguageType.PYTHON, 'test.py', 'proj-1');
     const classes = symbols.filter((s) => s.kind === 'class');
     expect(classes.map((s) => s.name)).toEqual(expect.arrayContaining(['MyClass', 'AnotherClass']));
   });
@@ -144,37 +155,43 @@ describe('LanguageService', () => {
       async def async_function():
           pass
     `;
-    const symbols = service.parseSymbols(content, LanguageType.PYTHON, 'test.py');
+    const symbols = service.parseSymbols(content, LanguageType.PYTHON, 'test.py', 'proj-1');
     const functions = symbols.filter((s) => s.kind === 'function');
     expect(functions.map((s) => s.name)).toEqual(expect.arrayContaining(['my_function', 'async_function']));
   });
 
   it('should parse top-level keys from JSON', () => {
     const content = JSON.stringify({ name: 'test', version: '1.0.0' });
-    const symbols = service.parseSymbols(content, LanguageType.JSON, 'config.json');
+    const symbols = service.parseSymbols(content, LanguageType.JSON, 'config.json', 'proj-1');
     expect(symbols.map((s) => s.name)).toEqual(expect.arrayContaining(['name', 'version']));
   });
 
   it('should throw ParseError for invalid JSON', () => {
-    expect(() => service.parseSymbols('{invalid}', LanguageType.JSON, 'config.json')).toThrow(ParseError);
+    expect(() => service.parseSymbols('{invalid}', LanguageType.JSON, 'config.json', 'proj-1')).toThrow(ParseError);
   });
 
   it('should return empty for HTML and CSS', () => {
-    expect(service.parseSymbols('<div></div>', LanguageType.HTML, 'test.html')).toEqual([]);
-    expect(service.parseSymbols('body { }', LanguageType.CSS, 'test.css')).toEqual([]);
+    expect(service.parseSymbols('<div></div>', LanguageType.HTML, 'test.html', 'proj-1')).toEqual([]);
+    expect(service.parseSymbols('body { }', LanguageType.CSS, 'test.css', 'proj-1')).toEqual([]);
   });
 
   it('should return empty for unknown language', () => {
-    expect(service.parseSymbols('content', LanguageType.UNKNOWN, 'test.unknown')).toEqual([]);
+    expect(service.parseSymbols('content', LanguageType.UNKNOWN, 'test.unknown', 'proj-1')).toEqual([]);
   });
 
   it('should include file path and line in symbols', () => {
     const content = `
       class MyClass {}
     `;
-    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'src/test.ts');
+    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'src/test.ts', 'proj-1');
     expect(symbols[0].filePath).toBe('src/test.ts');
     expect(symbols[0].line).toBe(2);
+  });
+
+  it('should assign deterministic symbol ids', () => {
+    const content = `class Foo {}`;
+    const symbols = service.parseSymbols(content, LanguageType.TYPESCRIPT, 'src/foo.ts', 'proj-1');
+    expect(symbols[0].id).toBe('proj-1:symbol:src/foo.ts:Foo:class:1');
   });
 
   // ── import extraction ────────────────────────────────────────
@@ -204,6 +221,31 @@ describe('LanguageService', () => {
     expect(service.extractImports('content', LanguageType.HTML)).toEqual([]);
   });
 
+  // ── export extraction ────────────────────────────────────────
+
+  it('should extract exports from TypeScript', () => {
+    const content = `
+      export class MyClass {}
+      export function myFunction() {}
+      export const myConst = 1;
+      export interface MyInterface {}
+      export type MyType = string;
+      export enum MyEnum {}
+    `;
+    const exports = service.extractExports(content, LanguageType.TYPESCRIPT);
+    expect(exports).toEqual(expect.arrayContaining(['MyClass', 'myFunction', 'myConst', 'MyInterface', 'MyType', 'MyEnum']));
+  });
+
+  it('should extract exports from Python', () => {
+    const content = `__all__ = ['foo', 'bar']`;
+    const exports = service.extractExports(content, LanguageType.PYTHON);
+    expect(exports).toEqual(['foo', 'bar']);
+  });
+
+  it('should return empty exports for unsupported languages', () => {
+    expect(service.extractExports('content', LanguageType.JSON)).toEqual([]);
+    expect(service.extractExports('content', LanguageType.HTML)).toEqual([]);
+  });
 
   // ── LanguageRegistry ─────────────────────────────────────────
 
@@ -243,6 +285,7 @@ describe('LanguageService', () => {
     expect(languageService.detectLanguage).toBeTypeOf('function');
     expect(languageService.parseSymbols).toBeTypeOf('function');
     expect(languageService.extractImports).toBeTypeOf('function');
+    expect(languageService.extractExports).toBeTypeOf('function');
     expect(languageService.enrichSourceIndex).toBeTypeOf('function');
   });
 
@@ -262,7 +305,7 @@ describe('LanguageService', () => {
 
   it('should have ParseError as subclass', () => {
     const error = new ParseError('bad parse');
-    expect(error).toBeInstanceOf(LanguageError);
+    expect(error).toBeInstanceOf(Error);
     expect(error.name).toBe('ParseError');
   });
 
@@ -272,6 +315,7 @@ describe('LanguageService', () => {
     expect(LanguageEvents.FILE_PARSED).toBe('language.file.parsed');
     expect(LanguageEvents.SYMBOLS_EXTRACTED).toBe('language.symbols.extracted');
     expect(LanguageEvents.IMPORTS_EXTRACTED).toBe('language.imports.extracted');
+    expect(LanguageEvents.EXPORTS_EXTRACTED).toBe('language.exports.extracted');
     expect(LanguageEvents.PARSE_FAILED).toBe('language.parse.failed');
   });
 });
