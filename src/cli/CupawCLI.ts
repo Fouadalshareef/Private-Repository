@@ -4,6 +4,7 @@ import { CLICommandError } from './CLIError.js';
 import { AdvisorCLIHandler, CLIAdvisorsOutput } from './AdvisorCLIHandler.js';
 import { AdvisorCLIController, type CLIControllerOutput } from './handlers/AdvisorCLIController.js';
 import { AIProviderType } from '../ai/AIProviderType.js';
+import { InteractiveCodingSession } from './InteractiveCodingSession.js';
 import { createInterface } from 'node:readline';
 
 /**
@@ -42,6 +43,7 @@ export class CupawCLI {
   private readonly currentSessionId: string;
   private readonly advisorHandler: AdvisorCLIHandler;
   private readonly controller: AdvisorCLIController;
+  private readonly codingSession: InteractiveCodingSession;
   private running = false;
 
   constructor(config: CLIConfig) {
@@ -50,6 +52,7 @@ export class CupawCLI {
     this.currentSessionId = 'cli-session';
     this.advisorHandler = new AdvisorCLIHandler();
     this.controller = new AdvisorCLIController(config.conversationRuntime);
+    this.codingSession = new InteractiveCodingSession(config);
   }
 
   /**
@@ -147,6 +150,12 @@ export class CupawCLI {
       case '/tools':
         this.printTools();
         break;
+      case '/code': {
+        // Extract the coding prompt from the rest of the input line.
+        const codePrompt = input.slice('/code'.length).trim();
+        await this.handleCodingRequest(codePrompt);
+        break;
+      }
       case '/exit':
       case '/quit':
         console.log('Goodbye!');
@@ -155,6 +164,14 @@ export class CupawCLI {
       default:
         throw new CLICommandError(`Unknown command: ${command}. Type /help for available commands.`);
     }
+  }
+
+  /**
+   * Handles a /code command by routing the prompt through the
+   * InteractiveCodingSession and CodingTaskPipeline.
+   */
+  private async handleCodingRequest(prompt: string): Promise<void> {
+    await this.codingSession.executeRequest({ prompt });
   }
 
   /**
@@ -332,6 +349,7 @@ Available commands:
   /clear       Clear the current conversation session
   /session     Show current session information
   /tools       List all registered tools
+  /code <request>  Execute a coding request (e.g. /code Add calculateTotal to src/Cart.ts)
   /advisors    List all available advisors
   /route <query>  Route a query to the best advisor
   /switch <advisorId>  Switch to a specific advisor
@@ -342,6 +360,7 @@ Available commands:
   /exit, /quit Exit the CLI
 
 Any other input will be sent to the AI agent as a chat message.
+Use /code to invoke the full AI coding pipeline (diff, validation, patch).
     `.trim());
   }
 

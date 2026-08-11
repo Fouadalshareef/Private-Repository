@@ -156,6 +156,7 @@ export {
   CupawCLI,
   AdvisorCLIHandler,
   CLITurnResult,
+  InteractiveCodingSession,
 } from './cli/index.js';
 export type {
   CLIConfig,
@@ -164,6 +165,8 @@ export type {
   RouteQueryOutput,
   SwitchAdvisorOutput,
   CLIAdvisorsOutput,
+  CodingRequestOptions,
+  InteractiveCodingResult,
 } from './cli/index.js';
 
 // Explicitly re-export advisor security policy symbols.

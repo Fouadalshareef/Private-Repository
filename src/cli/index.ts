@@ -3,6 +3,7 @@ export * from './CLIConfig.js';
 export * from './CupawCLI.js';
 export * from './AdvisorCLIHandler.js';
 export * from './handlers/AdvisorCLIController.js';
+export * from './InteractiveCodingSession.js';
 export * from '../server/websocket-handler.js';
 export * from '../server/dto/index.js';
 // Note: api-bridge is intentionally not exported because the bridge
