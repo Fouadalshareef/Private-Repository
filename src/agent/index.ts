@@ -29,3 +29,14 @@ export {
   AgentRuntimeNotFoundError,
   cloneValue,
 } from './types.js';
+
+// Coding Agent (MVP-EXEC-02)
+export {
+  CodingTaskStatus,
+  type CodingTaskRequest,
+  type ProposedFileChange,
+  type CodingTaskResult,
+  CodingTaskPipeline,
+  CodingTaskPipelineConfig,
+  createCodingAgentHandler,
+} from './coding/index.js';
