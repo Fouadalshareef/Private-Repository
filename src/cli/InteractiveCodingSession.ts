@@ -4,6 +4,10 @@ import { CodingTaskPipeline } from '../agent/coding/CodingTaskPipeline.js';
 import { CodingTaskStatus } from '../agent/coding/CodingTask.js';
 import { WorkspaceState } from '../workspace/WorkspaceState.js';
 
+import { ProjectScanner } from '../project/ProjectScanner.js';
+import { ProjectModelBuilder } from '../model/ProjectModelBuilder.js';
+import { SourceIndex } from '../source/SourceIndex.js';
+
 /**
  * Options for executing an interactive coding request.
  */
@@ -44,6 +48,7 @@ export interface InteractiveCodingResult {
  * - Validate that a workspace is active before running.
  * - Validate that the request prompt is non-empty.
  * - Translate CLI input into a {@link CodingTaskRequest}.
+ * - Build the latest SourceIndex from the Workspace.
  * - Execute the existing {@link CodingTaskPipeline} (no safety bypass).
  * - Print progress steps to stdout.
  * - Format and print success/failure results.
@@ -57,14 +62,9 @@ export interface InteractiveCodingResult {
  */
 export class InteractiveCodingSession {
   private readonly config: CLIConfig;
-  private readonly pipeline: CodingTaskPipeline;
 
   constructor(config: CLIConfig) {
     this.config = config;
-    this.pipeline = new CodingTaskPipeline({
-      fileSystem: config.fileSystem,
-      aiProvider: config.aiProvider,
-    });
   }
 
   /**
@@ -126,12 +126,30 @@ export class InteractiveCodingSession {
     targetFilePath?: string,
   ): Promise<CodingTaskResult> {
     console.log('Building context...');
+    
+    // 1. Scan the project
+    const scanner = new ProjectScanner(this.config.fileSystem);
+    const scanResult = scanner.scan(this.config.workspace);
+    
+    // 2. Build the project model and source index
+    const builder = new ProjectModelBuilder();
+    const projectModel = builder.build(scanResult);
+    const sourceIndex = new SourceIndex();
+    sourceIndex.build(projectModel);
+
+    // 3. Re-instantiate the pipeline with the fresh source index
+    const pipeline = new CodingTaskPipeline({
+      fileSystem: this.config.fileSystem,
+      aiProvider: this.config.aiProvider,
+      sourceIndex,
+    });
+
     console.log('Consulting AI...');
     console.log('Preparing changes...');
     console.log('Validating changes...');
     console.log('Applying changes...');
 
-    const result = await this.pipeline.execute({
+    const result = await pipeline.execute({
       prompt,
       projectPath,
       targetFilePath,

@@ -27,33 +27,34 @@ import type { WorkspaceInfo } from '../../src/workspace/WorkspaceInfo.js';
 // ---------------------------------------------------------------------------
 
 class FakeFileSystem implements IFileSystem {
-  constructor(public files = new Map<string, string>(), public dirs = new Set<string>()) {}
+  private n(p: string) { return p.startsWith('/') ? p.substring(1) : p; }
+  constructor(public files = new Map<string, string>(), public dirs = new Set<string>(['/'])) {}
 
   exists(path: string): boolean {
-    return this.files.has(path) || this.dirs.has(path);
+    return this.files.has(this.n(path)) || this.dirs.has(this.n(path));
   }
   readFile(path: string): string {
-    if (!this.files.has(path)) throw new Error(`File not found: ${path}`);
-    return this.files.get(path)!;
+    if (!this.files.has(this.n(path))) throw new Error(`File not found: ${path}`);
+    return this.files.get(this.n(path))!;
   }
   writeFile(path: string, content: string): void {
-    this.files.set(path, content);
+    this.files.set(this.n(path), content);
   }
   delete(path: string): void {
-    this.files.delete(path);
+    this.files.delete(this.n(path));
   }
   move(source: string, destination: string): void {
-    this.files.set(destination, this.files.get(source)!);
-    this.files.delete(source);
+    this.files.set(this.n(destination), this.files.get(this.n(source))!);
+    this.files.delete(this.n(source));
   }
   copy(source: string, destination: string): void {
-    this.files.set(destination, this.files.get(source)!);
+    this.files.set(this.n(destination), this.files.get(this.n(source))!);
   }
   createDirectory(path: string): void {
-    this.dirs.add(path);
+    this.dirs.add(this.n(path));
   }
   deleteDirectory(path: string): void {
-    this.dirs.delete(path);
+    this.dirs.delete(this.n(path));
   }
   list(_path: string): Array<FileInfo | DirectoryInfo> {
     void _path;

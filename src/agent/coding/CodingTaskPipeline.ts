@@ -132,7 +132,10 @@ export class CodingTaskPipeline {
       const fileContents = new Map<string, string>();
       for (const candidate of candidates) {
         try {
-          const content = this.fileSystem.readFile(candidate.path);
+          // Resolve path against project root if it is not already absolute
+          const isAbsolute = candidate.path.startsWith('/') || /^[a-zA-Z]:\\/.test(candidate.path);
+          const absolutePath = isAbsolute ? candidate.path : `${request.projectPath.replace(/\/$/, '')}/${candidate.path}`;
+          const content = this.fileSystem.readFile(absolutePath);
           fileContents.set(candidate.path, this.truncateContent(content));
         } catch (error) {
           errors.push(`Failed to read file "${candidate.path}": ${error instanceof Error ? error.message : String(error)}`);
@@ -238,7 +241,9 @@ export class CodingTaskPipeline {
         }
 
         if (patchResult.content !== undefined) {
-          this.fileSystem.writeFile(change.filePath, patchResult.content);
+          const isAbsolute = change.filePath.startsWith('/') || /^[a-zA-Z]:\\/.test(change.filePath);
+          const absolutePath = isAbsolute ? change.filePath : `${request.projectPath.replace(/\/$/, '')}/${change.filePath}`;
+          this.fileSystem.writeFile(absolutePath, patchResult.content);
           modifiedFiles.push(change.filePath);
         }
       }
