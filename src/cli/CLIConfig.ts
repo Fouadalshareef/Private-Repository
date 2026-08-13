@@ -88,6 +88,14 @@ export function createCLIConfig(options: {
   readonly container: import('../core/container/IContainer.js').IContainer;
   readonly aiProvider?: IAIProvider;
   readonly maxContextTokens?: number;
+  /**
+   * The explicit project root path for the workspace.
+   *
+   * When provided, the workspace is created with this exact root path.
+   * When omitted, the workspace falls back to `/` for backward
+   * compatibility with existing tests and tooling.
+   */
+  readonly projectRoot?: string;
 }): CLIConfig {
   const {
     logger,
@@ -95,6 +103,7 @@ export function createCLIConfig(options: {
     container,
     aiProvider,
     maxContextTokens,
+    projectRoot,
   } = options;
 
   const resolvedMaxContextTokens = maxContextTokens ?? 4096;
@@ -102,9 +111,13 @@ export function createCLIConfig(options: {
   // 1. Create the virtual file system
   const fileSystem = new VirtualFileSystem();
 
-  // 2. Create the workspace
+  // 2. Create the workspace with an explicit project root.
+  //    The root path is deterministic: it is either the caller-provided
+  //    projectRoot or the legacy `/` default. It is never silently
+  //    derived from the operating-system root.
+  const resolvedProjectRoot = projectRoot ?? '/';
   const workspace = new Workspace();
-  workspace.create('default', 'Default Workspace', '/');
+  workspace.create('default', 'Default Workspace', resolvedProjectRoot);
   workspace.open();
 
   // 3. Create the prompt engine
