@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cupaw</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar"><span class="brand-mark">C</span><span>CUPAW</span></header>
+      <section class="workspace-layout">
+        <aside class="project-panel">
+          <p class="eyebrow">PROJECT / WORKSPACE</p>
+          <h1 id="project-name">Loading project…</h1>
+          <dl>
+            <div><dt>Root</dt><dd id="project-root">—</dd></div>
+            <div><dt>Files</dt><dd id="project-files">—</dd></div>
+          </dl>
+        </aside>
+        <section class="chat-panel" aria-label="Cupaw chat">
+          <div class="chat-heading"><p class="eyebrow">CHAT</p><span class="status">Runtime connected</span></div>
+          <div id="messages" class="messages" aria-live="polite">
+            <article class="message assistant"><span>Cupaw</span><p>Ready when you are. Ask a question or describe what you want to build.</p></article>
+          </div>
+          <form id="chat-form" class="composer">
+            <input id="message-input" aria-label="Write a message" autocomplete="off" placeholder="Write a message…" />
+            <button id="send-button" type="submit">Send</button>
+          </form>
+        </section>
+      </section>
+    </main>
+    <script type="module" src="./renderer.js"></script>
+  </body>
+</html>
