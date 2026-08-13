@@ -2,9 +2,14 @@ import type { IValidationEngine } from './IValidationEngine.js';
 import type { ValidationResult, ValidationOptions, ValidationMessage } from './ValidationTypes.js';
 import { ValidationType, ValidationSeverity } from './ValidationTypes.js';
 import type { IFileSystem } from '../filesystem/IFileSystem.js';
+import { VirtualFileSystem } from '../filesystem/VirtualFileSystem.js';
 import { LanguageType } from '../language/LanguageType.js';
 import { SourceParser } from '../language/SourceParser.js';
-import { spawn } from 'child_process';
+import { createRequire } from 'node:module';
+import { spawn } from 'node:child_process';
+import ts from 'typescript';
+
+const require = createRequire(import.meta.url);
 
 /**
  * Validation Engine implementation.
@@ -91,7 +96,12 @@ export class ValidationEngine implements IValidationEngine {
         };
       }
 
-      const result = await this.runCommand('npx', ['tsc', '--noEmit', '--pretty', 'false'], projectPath);
+      if (fileSystem instanceof VirtualFileSystem) {
+        return this.validateVirtualTypeScript(projectPath, fileSystem, startTime);
+      }
+
+      const tscPath = require.resolve('typescript/lib/tsc.js');
+      const result = await this.runCommand(process.execPath, [tscPath, '--noEmit', '--pretty', 'false'], projectPath);
       
       if (result.code !== 0) {
         messages.push({
@@ -230,9 +240,18 @@ export class ValidationEngine implements IValidationEngine {
 
   private async runCommand(command: string, args: string[], cwd: string): Promise<{ code: number; stdout: string; stderr: string }> {
     return new Promise((resolve) => {
-      const proc = spawn(command, args, { cwd, shell: true });
+      const proc = spawn(command, args, { cwd, shell: false });
       let stdout = '';
       let stderr = '';
+      let settled = false;
+
+      const finish = (code: number, errorMessage?: string): void => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        resolve({ code, stdout, stderr: errorMessage ? `${stderr}${errorMessage}` : stderr });
+      };
 
       proc.stdout.on('data', (data) => {
         stdout += data.toString();
@@ -243,13 +262,81 @@ export class ValidationEngine implements IValidationEngine {
       });
 
       proc.on('close', (code) => {
-        resolve({
-          code: code ?? 1,
-          stdout,
-          stderr,
-        });
+        finish(code ?? 1);
+      });
+
+      proc.on('error', (error) => {
+        finish(1, error.message);
       });
     });
+  }
+
+  private validateVirtualTypeScript(
+    projectPath: string,
+    fileSystem: VirtualFileSystem,
+    startTime: number,
+  ): ValidationResult {
+    const config = JSON.parse(fileSystem.readFile(`${projectPath}/tsconfig.json`)) as {
+      readonly compilerOptions?: Record<string, unknown>;
+    };
+    const compilerOptions = ts.convertCompilerOptionsFromJson(config.compilerOptions ?? {}, projectPath).options;
+    compilerOptions.noEmit = true;
+
+    const sourceFiles = this.listTypeScriptFiles(projectPath, fileSystem);
+    const defaultHost = ts.createCompilerHost(compilerOptions, true);
+    const readFile = (fileName: string): string | undefined => {
+      if (fileSystem.exists(fileName)) {
+        return fileSystem.readFile(fileName);
+      }
+      return defaultHost.readFile(fileName);
+    };
+
+    const host: ts.CompilerHost = {
+      ...defaultHost,
+      fileExists: (fileName) => fileSystem.exists(fileName) || defaultHost.fileExists(fileName),
+      directoryExists: (directoryName) => fileSystem.exists(directoryName) || defaultHost.directoryExists?.(directoryName) === true,
+      readFile,
+      getSourceFile: (fileName, languageVersion) => {
+        const content = readFile(fileName);
+        return content === undefined
+          ? undefined
+          : ts.createSourceFile(fileName, content, languageVersion, true);
+      },
+      getCurrentDirectory: () => projectPath,
+    };
+
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram(sourceFiles, compilerOptions, host));
+    const messages = diagnostics
+      .filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error)
+      .map((diagnostic) => ({
+        severity: ValidationSeverity.ERROR,
+        file: diagnostic.file?.fileName,
+        message: ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
+      }));
+
+    return {
+      valid: messages.length === 0,
+      messages: Object.freeze(messages),
+      durationMs: Date.now() - startTime,
+    };
+  }
+
+  private listTypeScriptFiles(projectPath: string, fileSystem: IFileSystem): string[] {
+    const files: string[] = [];
+    const walk = (directory: string): void => {
+      for (const entry of fileSystem.list(directory)) {
+        if (entry.isDirectory) {
+          if (entry.name !== 'node_modules' && entry.name !== 'dist') {
+            walk(entry.path);
+          }
+        } else if (/\.tsx?$/.test(entry.path) && !entry.path.endsWith('.d.ts')) {
+          files.push(entry.path);
+        }
+      }
+    };
+
+    walk(projectPath);
+    return files;
   }
 
   private detectLanguage(path: string): LanguageType {
