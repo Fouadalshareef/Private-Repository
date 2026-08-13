@@ -25,6 +25,7 @@ import {
 export class FileConversationStore implements IConversationStore {
   private readonly baseDir: string;
   private readonly atomicWrite: boolean;
+  private readonly pendingWrites = new Map<string, Promise<void>>();
 
   constructor(config: ConversationStoreConfig) {
     this.baseDir = path.resolve(config.baseDir);
@@ -32,6 +33,23 @@ export class FileConversationStore implements IConversationStore {
   }
 
   public async saveSession(session: AdvisorSession): Promise<void> {
+    const sessionId = session.sessionId;
+    const previousWrite = this.pendingWrites.get(sessionId) ?? Promise.resolve();
+    const write = previousWrite
+      .catch(() => undefined)
+      .then(() => this.writeSession(session));
+
+    const pendingWrite = write.finally(() => {
+      if (this.pendingWrites.get(sessionId) === pendingWrite) {
+        this.pendingWrites.delete(sessionId);
+      }
+    });
+    this.pendingWrites.set(sessionId, pendingWrite);
+
+    await pendingWrite;
+  }
+
+  private async writeSession(session: AdvisorSession): Promise<void> {
     const sessionId = session.sessionId;
     const target = this.resolveSessionPath(sessionId);
 
