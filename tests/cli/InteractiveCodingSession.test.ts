@@ -27,8 +27,10 @@ import type { WorkspaceInfo } from '../../src/workspace/WorkspaceInfo.js';
 // ---------------------------------------------------------------------------
 
 class FakeFileSystem implements IFileSystem {
-  private n(p: string) { return p.startsWith('/') ? p.substring(1) : p; }
-  constructor(public files = new Map<string, string>(), public dirs = new Set<string>(['/'])) {}
+  private n(p: string) {
+    return p.replace(/^\/project\//, '').replace(/^\//, '');
+  }
+  constructor(public files = new Map<string, string>(), public dirs = new Set<string>(['project'])) {}
 
   exists(path: string): boolean {
     return this.files.has(this.n(path)) || this.dirs.has(this.n(path));
@@ -88,7 +90,7 @@ class FakeWorkspace implements IWorkspace {
   private _isOpen: boolean;
   private _root: string;
 
-  constructor(isOpen = true, root = '/') {
+  constructor(isOpen = true, root = '/project') {
     this._isOpen = isOpen;
     this._root = root;
   }
@@ -144,7 +146,7 @@ function makeMinimalConfig(
     aiProvider?: IAIProvider;
   } = {},
 ): CLIConfig {
-  const workspace = overrides.workspace ?? new FakeWorkspace(true, '/');
+  const workspace = overrides.workspace ?? new FakeWorkspace(true, '/project');
   const fileSystem = overrides.fileSystem ?? new FakeFileSystem();
   const aiProvider =
     overrides.aiProvider ??
@@ -237,7 +239,7 @@ describe('InteractiveCodingSession', () => {
   // -------------------------------------------------------------------------
   describe('Test 3 — No active workspace returns workspace error', () => {
     it('returns accepted=false and a workspace-related userError when workspace is closed', async () => {
-      const closedWorkspace = new FakeWorkspace(false, '/');
+      const closedWorkspace = new FakeWorkspace(false, '/project');
       const session = new InteractiveCodingSession(
         makeMinimalConfig({ workspace: closedWorkspace }),
       );
