@@ -21,6 +21,17 @@ export interface DesktopInvoker {
   invoke<T>(channel: string, ...args: readonly unknown[]): Promise<T>;
 }
 
+/** Main-process surface required to register the two renderer IPC handlers. */
+export interface DesktopIpcHandlerRegistrar {
+  handle(channel: string, listener: (_event: unknown, ...args: readonly unknown[]) => unknown): void;
+}
+
+/** Existing desktop runtime operations invoked by the IPC handlers. */
+export interface DesktopRuntime {
+  getWorkspaceInfo(): DesktopWorkspaceInfo;
+  sendMessage(content: string): Promise<DesktopChatResponse>;
+}
+
 /** Safe renderer API. No Node or filesystem APIs are exposed. */
 export interface CupawDesktopBridge {
   getWorkspace(): Promise<DesktopWorkspaceInfo>;
@@ -36,4 +47,17 @@ export function createDesktopBridge(invoker: DesktopInvoker): CupawDesktopBridge
     getWorkspace: () => invoker.invoke<DesktopWorkspaceInfo>(DesktopChannels.getWorkspace),
     sendMessage: (content: string) => invoker.invoke<DesktopChatResponse>(DesktopChannels.sendChatMessage, content),
   });
+}
+
+/**
+ * Registers the only IPC routes available to the renderer bridge.
+ * Keeping the mapping here prevents the preload, main process, and tests from
+ * silently drifting to different channel names.
+ */
+export function registerDesktopIpcHandlers(
+  registrar: DesktopIpcHandlerRegistrar,
+  runtime: DesktopRuntime,
+): void {
+  registrar.handle(DesktopChannels.getWorkspace, () => runtime.getWorkspaceInfo());
+  registrar.handle(DesktopChannels.sendChatMessage, (_event, content) => runtime.sendMessage(String(content)));
 }

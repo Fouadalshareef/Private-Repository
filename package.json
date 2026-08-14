@@ -4,7 +4,7 @@
   "private": true,
   "description": "Cupaw AI Platform Core Foundation",
   "type": "module",
-  "main": "./dist/electron/main.js",
+  "main": "./dist/electron/main.cjs",
   "bin": {
     "cupaw": "./src/bin/cupaw.js"
   },
@@ -14,7 +14,8 @@
   "scripts": {
     "dev": "tsc --watch",
     "desktop": "npm run build && electron .",
-    "build": "tsc",
+    "smoke:desktop": "npm run build && node scripts/electron-smoke.cjs",
+    "build": "tsc && node scripts/copy-electron-runtime.cjs",
     "test": "vitest run",
     "lint": "eslint .",
     "format": "prettier --write .",
